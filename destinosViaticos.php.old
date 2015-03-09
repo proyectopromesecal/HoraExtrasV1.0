@@ -1,0 +1,187 @@
+<?php 
+include("lib/motor.php");
+
+$s = new Seguridad();
+if(!isset($_SESSION)){
+	session_start();
+}
+if($s->verificar())
+{
+	if(strcmp($s->verificarTipo(), "Secretaria") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0)
+	{	
+		#echo '<pre>';
+		#print_r($_POST);
+		#echo '</pre>';
+		
+		#echo '<pre>';
+		#print_r($_GET);
+		#echo '</pre>';
+		$msjError="";		
+	}
+	else
+	{
+		header("Location:index.php");
+	}
+}
+else
+{
+	header('Location:Login.php');
+}
+if($_POST)
+{
+	if(isset($_POST['btnGuardar']))
+	{
+		if(isset($_SESSION['bnfViaticos'] ))
+		{
+			if(isset($_POST['txtFechaE']))
+			{
+				ManejadorDietaViatico::guardarDestinos($_SESSION['dvID'], $_POST['txtFechaE'], $_POST['txtFechaS'], $_POST['txtHoraE'], $_POST['txtHoraS'], $_POST['txtLugar']);	
+				ManejadorDietaViatico::calcularViatico($_SESSION['dvID']);
+				echo "<script languaje='javascript' type='text/javascript'>window.close();</script>";
+			}
+		}
+		else
+		{
+			
+		}
+	}
+}
+else if (isset($_GET['f']))
+{
+	$_SESSION['dvID'] = $_GET['f'];
+}
+?>
+<html>
+	<head>
+		<title>Destinos</title>
+		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
+		<script src="css/jquery-2.0.3.min.js" type="text/javascript"></script>
+		<style>
+			input{
+				display:inline-block;
+				margin-left:30px;
+			}
+			#th2
+			{
+				display:inline-block;
+				margin-left:30px;
+				width:130px;
+			}
+		</style>
+		<script type="text/javascript">
+			var num = 0; 
+			evento = function (evt) { 
+			   return (!evt) ? event : evt;
+			}
+			agregaCampo = function ()
+			{
+			    div = document.createElement('div');
+			    div.className = 'dest';
+			    div.id = 'destinos' + (++num);
+				
+			    campo1 = document.createElement('input');
+			    campo1.name = 'txtFechaE[]';
+			    campo1.type = 'date';
+			    campo1.style.width = 130;
+				campo1.style.marginLeft ="150px";
+				campo1.style.marginBottom ="10px";
+				campo1.innerHTML ="required";
+				
+			    campo3 = document.createElement('input');
+			    campo3.name = 'txtHoraE[]';
+			    campo3.type = 'time';
+				campo3.style.marginLeft ="65px";
+				campo3.style.marginBottom ="10px";		
+				
+			    campo2 = document.createElement('input');
+			    campo2.name = 'txtFechaS[]';
+			    campo2.type = 'date';
+			    campo2.style.width = 130;
+				campo2.style.marginLeft ="60px";
+				campo2.style.marginBottom ="10px";
+			   
+			    campo4 = document.createElement('input');
+			    campo4.name = 'txtHoraS[]';
+			    campo4.type = 'time';
+				campo4.style.marginLeft ="58px";
+				campo4.style.marginBottom ="10px";
+
+			    campo5 = document.createElement('SELECT');
+			    campo5.name = 'slcCentro';
+			    campo5.style.width = 145;
+				campo5.style.marginLeft ="20px";
+				campo5.style.marginBottom ="10px";
+				campo5.id = 'centros';
+			
+			    campo6 = document.createElement('SELECT');
+			    campo6.name = 'slcReg';
+			    campo6.style.width = 145;
+				campo6.style.marginLeft ="60px";
+				campo6.style.marginBottom ="10px";
+				campo6.id ='reg';
+				campo6.onchange = function(){
+					var r;
+					r= document.getElementById('reg').value;
+					$.post('getCentros.php',{id:r}, function(datos)
+					{
+						document.getElementById('centros').innerHTML = datos;
+					});
+				};
+				
+				$.post('getRegiones.php', function(datos)
+				{
+					campo6.innerHTML = datos;
+				});
+			   
+			    a = document.createElement('a');
+			    a.name = div.id;
+			    a.href = '#';
+			    a.onclick = borraCampo;
+			    a.innerHTML = '&nbsp &nbsp &nbsp         Eliminar';
+
+			    div.appendChild(campo1);	
+				div.appendChild(campo3);
+			    div.appendChild(campo2);
+			    div.appendChild(campo4);
+				div.appendChild(campo6);
+			    div.appendChild(campo5);
+				
+			    div.appendChild(a);
+			    contenedor = document.getElementById('destinos');
+			    contenedor.appendChild(div);
+			}
+			borraCampo = function (evt){
+			   evt = evento(evt);
+			   campo = remObj(evt);
+			   div = document.getElementById(campo.name);
+			   div.parentNode.removeChild(div);
+			}	
+			remObj = function (evt) { 
+			   return evt.srcElement ?  evt.srcElement : evt.target;
+			}		
+		</script>
+	</head>
+	<body>
+		<?php //include("menu.html")?>
+		<div id='page'>
+			<div style="width:100%"  class="tab_cadre_fixe">
+				<form method="post" action="destinosviaticos.php">		
+					<div>
+						<center>
+							<a href="#" onclick="agregaCampo()"><img src='pics/add.png'> Agregar Destinos </a> <br><br>
+							<table>
+								<th id="th2">Fecha de salida</th><th id="th2">Hora de salida</th><th id="th2">Fecha de entrada</th><th id="th2">Hora de entrada</th> <th id="th2">Region</th>  <th style="display:inline-block;margin-left:15px;width:155px;">CSP</th>
+							</table>
+						</center>	
+						<div id="destinos" class="dest">
+							
+						</div>	
+						<center>
+							<input type="submit" name="btnGuardar" value="Guardar y Salir" class="submit"></input>		
+						</center>			
+					</div><br><br>
+				</form>				
+			</div>
+		</div>
+	</body>
+<html>

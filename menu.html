@@ -1,0 +1,303 @@
+<?php 
+	if(isset($_SESSION))
+	{
+		if(isset($_SESSION['usuario']) && isset($_SESSION['tipo']))
+		{
+			$menu;
+			$desconectar ="desconectarse.php";
+			$ruta = "css/styles.css";
+			$rutaJq = "js/jquery-2.1.1.js";
+			switch($_SESSION['tipo'])
+			{				
+				case "Viewer":
+				$ruta = "../css/styles.css";
+				$rutaJq = "../js/jquery-2.1.1.js";
+				$desconectar ="../desconectarse.php";
+				if(strstr($url,"reportes/"))
+				{
+					$ruta = "../css/styles.css";
+					$rutaJq = "../js/jquery-2.1.1.js";
+					$desconectar ="../desconectarse.php";
+				}
+				$menu="
+					<div id='c_menu' >
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu3'><a href='' class='itemP'>Reportes</a>
+								<ul>
+									<li><a href='/horasextra/reportes/generadorreportes.php'>Pago de Horas Extra</a></li>
+									<li><a href='/horasextra/reportes/generadortransporte.php'>Pago de Transporte</a></li>
+									<li><a href='/horasextra/reportes/ReporteES.php'>Entrada / Salida</a></li>
+									<li><a href='/horasextra/reportes/generadorViatico.php'>Dietas y Viaticos</a></li>
+									<li><a href='/horasextra/reportes/ReportePunchViatico.php'>Punch Viatico</a></li>
+									<li><a href='/horasextra/reportes/generadorPagos.php'>Solicitudes Pagadas</a></li>
+								</ul>
+							</li>
+						</ul>
+					</div>";
+				
+				break;		
+				
+				case "Administrador":
+				$menu="
+					<div id='c_menu' >
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu4'> <a href='#' class='itemP'>Administracion</a>
+								<ul>
+									<li><a href='/horasextra/mantenimientoEmpleados.php'>Empleados</a></li>	
+									<li><a href='/horasextra/mantenimientoDepartamento.php'>Departamentos</a></li>	
+									<li><a href='/horasextra/mantenimientoCargo.php'>Cargos</a></li>
+									<li><a href='/horasextra/diasFeriados.php'>Dias Feriados</a></li>
+									<li><a href='/horasextra/tablaviaticos.php'>Dieta y Viatico</a></li>								
+								</ul>
+							</li>
+						</ul>
+					</div>";
+				break;
+				
+				case "Pago":
+				$menu="
+					<div id='c_menu' >
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu2'><a href='#' class='itemP'>Pagos</a>
+								<ul>
+									<li><a href='/horasextra/solicitudesHEPagadas.php'>Hora Extra</a></li>
+									<li><a href='/horasextra/solicitudesTRPagadas.php'>Transporte</a></li>
+									<li><a href='/horasextra/solicitudesDVPagadas.php'>Dieta y Viaticos</a></li>	
+								</ul>
+							</li>
+						</ul>
+					</div>
+					<div id='sep'></div>
+					";			
+				break;
+
+				case "Asistente":
+				$asistente="";
+				$domain = $_SERVER['HTTP_HOST'];  
+				$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+				if(strstr($url,"reportes/"))
+				{
+					$ruta = "../css/styles.css";
+					$rutaJq = "../js/jquery-2.1.1.js";
+					$desconectar ="../desconectarse.php";
+				}
+				$menu="
+					<div id='c_menu'>
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu2'><a href='#' class='itemP'>Solicitudes</a>
+								<ul>
+									<li><a href='/horasextra/solicitudeshoras.php'>Hora Extra</a></li>
+									<li><a href='/horasextra/solicitudespago.php'>Pago Horas Extras</a></li>
+									<li><a href='/horasextra/pagotransporte.php'>Pago Transporte</a></li>	
+									<li><a href='/horasextra/solicitudesviaticos.php'>Dieta y Viaticos</a></li>
+								</ul>
+							</li>
+							<li id='menu3'><a href='#' class='itemP'>Administracion</a>
+								<ul>
+									<li><a href='/horasextra/gruposempleados.php'>Grupos</a></li>
+								</ul>
+							</li>
+							<li id='menu5'><a href='#' class='itemP'>Reportes</a>
+								<ul>
+									<li><a href='/horasextra/reportes/reporteTransporteSecretaria.php'>Consolidado Transporte</a></li>
+									<li><a href='/horasextra/reportes/reporteHESecretaria.php'>Consolidado Hora Extra</a></li>
+									<li><a href='/horasextra/reportes/ReporteES.php'>Ponche</a></li>
+								</ul>
+							</li>
+							<li id='menu3'><a href='#' class='itemP'>Asistente</a>
+								<ul>
+									<li><a href='/horasextra/reportes/reporteHoraextra.php'>Hora Extra</a></li>
+									<li><a href='/horasextra/reportes/reporteTransporte.php'>Transporte</a></li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+					<div id='sep'></div>";
+				break;
+
+				case "Secretaria":
+				$asistente="";
+				$domain = $_SERVER['HTTP_HOST'];  
+				$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+				if(strstr($url,"reportes/"))
+				{
+					$ruta = "../css/styles.css";
+					$rutaJq = "../js/jquery-2.1.1.js";
+					$desconectar ="../desconectarse.php";
+				}
+				$menu="
+					<div id='c_menu'>
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu2'><a href='#' class='itemP'>Solicitudes</a>
+								<ul>
+									<li><a href='/horasextra/solicitudeshoras.php'>Hora Extra</a></li>
+									<li><a href='/horasextra/solicitudespago.php'>Pago Horas Extras</a></li>
+									<li><a href='/horasextra/pagotransporte.php'>Pago Transporte</a></li>	
+									<li><a href='/horasextra/solicitudesviaticos.php'>Dieta y Viaticos</a></li>
+								</ul>
+							</li>
+							<li id='menu3'><a href='#' class='itemP'>Administracion</a>
+								<ul>
+									<li><a href='/horasextra/gruposempleados.php'>Grupos</a></li>
+								</ul>
+							</li>
+							<li id='menu5'><a href='#' class='itemP'>Reportes</a>
+								<ul>
+									<li><a href='/horasextra/reportes/reporteTransporteSecretaria.php'>Consolidado Transporte</a></li>
+									<li><a href='/horasextra/reportes/reporteHESecretaria.php'>Consolidado Hora Extra</a></li>
+									<li><a href='/horasextra/reportes/ReporteES.php'>Ponche</a></li>
+								</ul>
+							</li>
+							{$asistente}
+						</ul>
+					</div>
+					<div id='sep'></div>";
+				break;
+				
+				case "Autorizador":
+				$menu="
+					<div id='c_menu'>
+						<ul class='menu' id='menu'>
+							<li id='menu1'><a href='/horaextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu6'><a href='/horasextra/autorizacionhe.php' class='itemP'>Autorizaciones</a>
+								<ul>
+									<li><a href='/horasextra/AutorizacionHE.php'>Horas Extra</a>							
+									<li><a href='/horasextra/AutorizacionDV.php'>Dieta y Viatico</a></li>					
+								</ul>
+							</li>						
+						</ul>
+					</div>
+					<div id='sep'></div>";
+				break;
+				
+				case "SuperAdmin":
+				
+				$domain = $_SERVER['HTTP_HOST'];  
+				$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+				if(strstr($url,"reportes/") or strstr($url,"reloj/"))
+				{
+					$ruta = "../css/styles.css";
+					$rutaJq = "../js/jquery-2.1.1.js";
+					$desconectar ="../desconectarse.php";
+				}
+				else
+				{
+					$ruta = "css/styles.css";
+					$rutaJq = "js/jquery-2.1.1.js";
+				}
+				$menu="
+					<div id='c_menu'>
+						<ul class='menu' id='menu' >
+							<li id='menu1'><a href='/horasextra/principal.php' class='itemP'>Inicio</a></li>
+							<li id='menu2'><a href='#' class='itemP'>Solicitudes</a>
+								<ul>
+									<li><a href='/horasextra/solicitudeshoras.php'>Horas Extra</a></li>
+									<li><a href='/horasextra/solicitudespago.php'>Pago Horas Extras</a></li>
+									<li><a href='/horasextra/pagotransporte.php'>Pago Transporte</a></li>	
+									<li><a href='/horasextra/solicitudesviaticos.php'>Dieta y Viaticos</a></li>
+								</ul>
+							</li>
+							<li id='menu3'> <a href='' class='itemP'>Reportes</a>
+								<ul>
+									<li><a href='/horasextra/reportes/generadorreportes.php'>Pago de Horas Extra</a></li>
+									<li><a href='/horasextra/reportes/generadortransporte.php'>Pago de Transporte</a></li>
+									<li><a href='/horasextra/reportes/generadorViatico.php'>Dietas y Viaticos</a></li>
+									<li><a href='/horasextra/reportes/ReportePunchViatico.php'>Punch Viatico</a></li>
+									<li><a href='/horasextra/reportes/ReporteES.php'>Entrada / Salida</a></li>
+									<li><a href='/horasextra/reportes/generadorPagos.php'>Solicitudes Pagadas</a></li>
+								</ul>
+							</li>
+							<li id='menu4'> <a href='/horasextra/index.php' class='itemP'>Administracion</a>
+								<ul>
+									<li><a href='/horasextra/mantenimientoEmpleados.php'>Empleados</a></li>			
+									<li><a href='/horasextra/mantenimientoUsuario.php'>Usuarios</a></li>	
+									<li><a href='/horasextra/tablaviaticos.php'>Dieta y Viatico</a></li>		
+									<li><a href='/horasextra/diasFeriados.php'>Dias Feriados</a></li>	
+									<li><a href='/horasextra/mantenimientoDepartamento.php'>Departamentos</a></li>	
+									<li><a href='/horasextra/mantenimientoCargo.php'>Cargos</a></li>	
+								</ul>
+							</li>
+							<li id='menu5'><a href='#' class='itemP'>Utilidades</a>
+								<ul>
+									<li><a href='/horasextra/reloj/reloj.php'>Reloj</a>							
+									<li><a href='/horasextra/archivos.php'>Logs y Correo</a></li>					
+								</ul>
+							</li>
+							<li id='menu6'><a href='/horasextra/autorizacionhe.php' class='itemP'>Autorizaciones</a>
+								<ul>
+									<li><a href='/horasextra/AutorizacionHE.php'>Horas Extra</a>							
+									<li><a href='/horasextra/AutorizacionDV.php'>Dieta y Viatico</a></li>					
+								</ul>
+							</li>
+							<li id='menu7'><a href='#' class='itemP'>Pagos</a>
+								<ul>
+									<li><a href='/horasextra/solicitudesHEPagadas.php'>Hora Extra</a></li>
+									<li><a href='/horasextra/solicitudesTRPagadas.php'>Transporte</a></li>
+									<li><a href='/horasextra/solicitudesDVPagadas.php'>Dieta y Viaticos</a></li>	
+								</ul>
+							</li>
+						</ul>
+					</div>";
+				break;				
+			}
+		}
+	}
+?>
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<link rel="stylesheet" href="<?php echo $ruta;?>" type="text/css" media="screen">
+		<link rel="shortcut icon" href="pics/icono.ico" />
+		<style type="text/css">
+			ul.menu li ul {
+				display:none;
+			}
+			ul.menu li:hover ul {
+				display:block;
+				position:relative;
+			}
+		</style>
+	</head>
+	<body>
+		<div id='header' style="height: 11%;">
+			<div id='c_logo'>
+			</div>
+			<div id='c_preference'>
+				<ul>
+					<li id='deconnexion'><a href="<?php echo $desconectar;?>" title='Desconexión'>Desconexión(<?php echo $_SESSION['usuario'];?>)</a></li>
+					<li><a href='/horasextra/archivos/Notas.txt' target='_blank' title='Ayuda'>Notas</a></li>
+					<li><a href='/horasextra/archivos/Manual.pdf' target='_blank' title='Ayuda'>Ayuda</a></li>
+					<li><a href='/horasextra/archivos/ManualS.pdf' target='_blank' title='Ayuda'>Manual Secretarias</a></li>
+				</ul>
+			</div>
+			<div id='c_recherche'>
+				<div class="sep"></div>
+			</div>
+			<?php 
+				if(isset($menu))
+				{
+					echo $menu;
+				}
+				else
+				{
+					echo "No se ha escrito el menu";
+				} 
+			?>			
+			<div id="c_ssmenu1" style="top-margin:10px;height:5px;">
+				<ul>
+					
+				</ul>
+			</div>
+			<div id="c_ssmenu2" style="height:25px;">
+				<ul>
+					<li style='left-margin:20px;'>&nbsp &nbsp &nbsp &nbsp <b><?php if(isset($_SESSION['rutaActual'])) echo $_SESSION['rutaActual'];?></b></li>
+				</ul>
+			</div>
+		</div>
+	</body>
+</html>
