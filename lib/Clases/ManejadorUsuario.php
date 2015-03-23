@@ -115,7 +115,7 @@ class ManejadorUsuario
 					$_SESSION['id']= ManejadorUsuario::obtenerIdSe($_SESSION['usuario']);	
 					$_SESSION['tipo']= ManejadorUsuario::obtenerTipo($_SESSION['id']);
 					$depto = ManejadorUsuario::obtenerDepartamento(ManejadorUsuario::obtenerIdEmpleado($_SESSION['id']));
-					$_SESSION['dpto'] = utf8_decode($depto);
+					$_SESSION['dpto'] = $depto;
 				}
 			}
 			else

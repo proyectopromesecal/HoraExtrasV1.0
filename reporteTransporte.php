@@ -17,7 +17,7 @@ global $tabla;
 				inner join horaextra_transporte f on f.id_formulario_transporte = e.id and f.id_solicitudhe = g.id
 				inner join solicitudes_autorizadas h on h.id_solicitud = g.id and h.tipo = 'HoraExtra' and h.autorizado = 1
 				inner join solicitudes i on i.id_empleado = a.id and i.id_solicitud = g.id 
-				where a.id not in(1255, 146, 124, 102, 136)";
+				where a.nivel=0";
 
 		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
 		$queryTotal="
@@ -31,7 +31,7 @@ global $tabla;
 				inner join horaextra_transporte f on f.id_formulario_transporte = e.id and f.id_solicitudhe = g.id
 				inner join solicitudes_autorizadas h on h.id_solicitud = g.id and h.tipo = 'HoraExtra' and h.autorizado = 1
 				inner join solicitudes i on i.id_empleado = a.id and i.id_solicitud = g.id 
-				where a.id not in(1255, 146, 124, 102, 136)";
+				where a.nivel=0";
 		$rsTotal = sqlsrv_query($_SESSION['con'],$queryTotal, $params, $options);
 		if($rs)
 		{
@@ -104,11 +104,10 @@ class PDF extends FPDF
 			$w = array
 			(0 => 60,
 			 1 => 45,
-			 2 => 70,
+			 2 => 85,
 			 3 => 15,
-			 4 => 15,
-			 5 => 35);
-			$header= array('Nombre', 'Area', 'Departamento', 'Fecha','Pago', 'Firma');
+			 4 => 15);
+			$header= array('Nombre', 'Area', 'Departamento', 'Fecha','Pago');
 			for($i=0;$i<count($header);$i++)
 			{
 				$this->Cell($w[$i],10,$header[$i],1,0,'C');
@@ -123,9 +122,8 @@ class PDF extends FPDF
 				$columna = explode(";",$row); //separar los datos en posiciones de arreglo 
 				if($row == end($tabla))
 				{
-					$this->Cell(190,6,"Total",1,'LR');
+					$this->Cell(205,6,"Total",1,'LR');
 					$this->Cell(15,6,$columna[0]." RD$",1,0,'LR');
-					$this->Cell(35,6,'',1,'LR');
 					$this->Ln();
 				}
 				else
@@ -134,8 +132,7 @@ class PDF extends FPDF
 					$this->Cell($w[1],8,$columna[1],1,0,'LR');
 					$this->Cell($w[2],8,$columna[2],1,0,'LR');
 					$this->Cell($w[3],8,$columna[3],1,0,'LR');	
-					$this->Cell($w[4],8,$columna[4]." RD$",1,0,'LE');
-					$this->Cell($w[5],8,"",1,'LR');			
+					$this->Cell($w[4],8,$columna[4]." RD$",1,0,'LE');		
 					$this->Ln();				
 				}		
 			}
@@ -146,7 +143,7 @@ class PDF extends FPDF
 
 // Creación del objeto de la clase heredada
 $pdf=new PDF('L', 'mm', 'A4');
-$pdf->SetLeftMargin(25);
+$pdf->SetLeftMargin(35);
 $pdf->AliasNbPages();
 $pdf->AddPage();
 //$pdf->SetFont('Times','B',12);

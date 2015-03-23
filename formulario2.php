@@ -42,25 +42,38 @@
 			header('Location:formulario2.php');
 		}
 		else if($_POST['btnBeneficiarios'])
-		{			
-			$hora = explode(':',$_POST['txtHoras']);
-			if($hora[0]== 0 && $hora[1]<30)
-			{
-				echo "<script>alert('El tiempo de trabajo estimado no puede ser menor 30 minutos');</script>";	
-			}
+		{
+			if ($_POST['txtID'] >0) {
+				$s = $_POST['txtID'];
+				$t = $_POST['txtIDT'];
+				header("Location:empform.php?f={$s}&t={$t}");	
+			}	
 			else
 			{
-				$dia = date('Y-m-d',time()+172800);
-				$hora = date('H:i:s');
-
-				if(strcmp($_POST['slcProgramado'], "Programado")==0)
+				$hora = explode(':',$_POST['txtHoras']);
+				if($hora[0]== 0 && $hora[1]<30)
 				{
-					if($_POST['txtFecha'] >= $dia)
+					echo "<script>alert('El tiempo de trabajo estimado no puede ser menor 30 minutos');</script>";	
+				}
+				else
+				{
+					$dia = date('Y-m-d',time()+172800);
+					$hora = date('H:i:s');
+					$crear = true;
+
+					if(strcmp($_POST['slcProgramado'], "Programado")==0)
 					{
+						if($_POST['txtFecha'] < $dia)
+						{
+							$crear = false;
+							echo "<script>alert('Si la actividad es programada debe solicitarse con 2 dias de anticipacion');</script>";
+						}
+					}
+					if ($crear) {
 						$sq->setProgramado($_POST['slcProgramado']);
 						$sq->setID($_POST['txtID']);
 						$tr->setID($_POST['txtIDT']);
-						if($sq->getID()==0 || $sq->getID()=='')
+						if($sq->getID()==0 ||$sq->getID()=='')
 						{
 							$sq->setFechaCreacion(date("Y-m-d"));
 							$tr->setFechaCreacion(date("Y-m-d"));
@@ -73,56 +86,25 @@
 						$sq->setDepartamento($_SESSION['dpto']);
 						$sq->setTiempoEstimado($_POST['txtHoras']);
 						$sq->setHora($hora);
-						$sq->setUsuario($_SESSION['usuario']);
 						$sq->guardar();	
-						if(empty($tr->getNoOficio))
+						$x = $tr->getNoOficio();
+						if(empty($x))
 						{
 							$tr->setNoOficio(ManejadorTransporte::generarNoOficio());
 						}
 						$tr->setArea($_POST['txtArea']);
 						$tr->setFecha($_POST['txtFecha']);
 						$tr->setDepartamento($_SESSION['dpto']);
-						$tr->guardar();
-						//ManejadorTransporte::verificarHeTrans()
-						ManejadorTransporte::asignarTransporte($tr->getID(), $sq->getID());
-						header("Location:empform.php?f={$sq->getID()}&t={$tr->getID()}");
+						$tr->guardar();	
+						if(ManejadorTransporte::verificarHeTrans($tr->getID()))
+						{
+							ManejadorTransporte::asignarTransporte($tr->getID(), $sq->getID());
+						}
+						header("Location:empform.php?f={$sq->getID()}&t={$tr->getID()}");							
 					}
-					else
-					{
-						echo "<script>alert('Si la actividad es programada debe solicitarse con 2 dias de anticipacion');</script>";	
-					}
+
 				}
-				else
-				{
-					$sq->setProgramado($_POST['slcProgramado']);
-					$sq->setID($_POST['txtID']);
-					$tr->setID($_POST['txtIDT']);
-					if($sq->getID()==0 ||$sq->getID()=='')
-					{
-						$sq->setFechaCreacion(date("Y-m-d"));
-						$tr->setFechaCreacion(date("Y-m-d"));
-					}
-					$sq->setNoOficio($_POST['txtOficio']);
-					$sq->setObjetivo($_POST['txtObjetivo']);
-					$sq->setDescripcion($_POST['txtDescripcion']);
-					$sq->setAlcance($_POST['txtAlcance']);
-					$sq->setFecha($_POST['txtFecha']);
-					$sq->setDepartamento($_SESSION['dpto']);
-					$sq->setTiempoEstimado($_POST['txtHoras']);
-					$sq->setHora($hora);
-					$sq->guardar();	
-					if(empty($tr->getNoOficio))
-					{
-						$tr->setNoOficio(ManejadorTransporte::generarNoOficio());
-					}
-					$tr->setArea($_POST['txtArea']);
-					$tr->setFecha($_POST['txtFecha']);
-					$tr->setDepartamento($_SESSION['dpto']);
-					$tr->guardar();
-					ManejadorTransporte::asignarTransporte($tr->getID(), $sq->getID());
-					header("Location:empform.php?f={$sq->getID()}&t={$tr->getID()}");					
-				}			
-			}
+			}		
 		} 
 	}
 	else if (isset($_GET['edit']) && isset($_GET['t']))

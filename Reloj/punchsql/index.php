@@ -1,9 +1,9 @@
 <?php
 include("SQLHE.php");
 
-$dia= date('d', strtotime(' -1 day'));
-$mes=date('m', strtotime(' -1 day'));
-$anio=date('Y', strtotime(' -1 day'));
+$dia= date('d', strtotime(' -3 day'));
+$mes=date('m', strtotime(' -3 day'));
+$anio=date('Y', strtotime(' -3 day'));
 echo $dia."/".$mes."/".$anio."<br>";
 
 $info = array('Database'=>'RelojPonches', 'UID'=>'sa', 'PWD'=>'PromeseCal1525'); 

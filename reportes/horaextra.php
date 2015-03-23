@@ -83,16 +83,16 @@ class PDF extends FPDF
 		$this->setLeftMargin(10);
 		// Logo
 		$this->Image('../imagenes/logo-promosecal.png',15,10,50, 20);
-		$this->Image('../imagenes/farmacia-logo.png',230,10,50,20);
+		$this->Image('../imagenes/farmacia-logo.png',290,10,50,20);
 		// Arial bold 15
 		$this->SetFont('Arial','B',14);
 		$this->Ln(10);
 		// Movernos a la derecha
 		// Título
-		$this->Cell(267, 36, "Reporte de trabajo en horas extraordinarias",0,0, 'C');
+		$this->Cell(327, 36, "Reporte de trabajo en horas extraordinarias",0,0, 'C');
 		$this->Ln(10);
 		$this->SetFont('Arial','',14);
-		$this->Cell(265 , 36,"Reportar: DESDE: {$_GET['fi']} HASTA: {$_GET['ff']}",0,0,'C');
+		$this->Cell(325 , 36,"Reportar: DESDE: {$_GET['fi']} HASTA: {$_GET['ff']}",0,0,'C');
 		// Salto de línea
 		$this->Ln(30);
 	}
@@ -100,7 +100,7 @@ class PDF extends FPDF
 	// Pie de página
 	function Footer()
 	{
-		$this->setLeftMargin(45);
+		$this->setLeftMargin(75);
 		$this->SetY(-45);
 
 		$this->SetFont('Arial','B',9);
@@ -157,9 +157,11 @@ class PDF extends FPDF
 		 4 => 20,
 		 5 => 20,
 		 6 => 20,
-		 7 => 20);
+		 7 => 20,
+		 8 => 27,
+		 9 => 27);
 		 
-		$header= array('Nombre', 'Cedula','Cargo', 'Departamento', 'Pago (RD$)','Sueldo', 'Horas Feriadas', 'Horas Normales');
+		$header= array('Nombre', 'Cedula','Cargo', 'Departamento', 'Pago (RD$)','Sueldo', 'Horas Feriadas', 'Horas Normales', 'Monto Feriado (RD$)', 'Monto Normal (RD$)');
 		for($i=0;$i<count($header);$i++)
 		{
 			$this->Cell($w[$i],10,$header[$i],1,0,'C');
@@ -179,18 +181,33 @@ class PDF extends FPDF
 				$this->Cell(20,6,' ',1,0,'C');
 				$this->Cell(20,6,' ',1,0,'C');
 				$this->Cell(20,6,' ',1,0,'C');
+				$this->Cell(27,6,' ',1,0,'C');
+				$this->Cell(27,6,' ',1,0,'C');
 			}
 			else
 			{
 				$id = Manejador::obtenerIdE($columna[1]);
+				$pagonormal;
+				$horanormal;
+				$pagoferiado;
+				$horaferiada;
+				$tempN = explode('/*', ManejadorSolicitud::obtenerTotalHoras($id,$_GET['fi'], $_GET['ff'], 0 ));
+				$tempF = explode('/*', ManejadorSolicitud::obtenerTotalHoras($id,$_GET['fi'], $_GET['ff'], 1 ));
+				$horanormal = $tempN[0];
+				$pagonormal = $tempN[1];
+				$horaferiada = $tempF[0];
+				$pagoferiado = $tempF[1];
+				
 				$this->Cell($w[0],8,$columna[0],1,0,'C');
 				$this->Cell($w[1],8,$columna[1],1,0,'C');
 				$this->Cell($w[2],8,$columna[2],1,0,'C');	
 				$this->Cell($w[3],8,$columna[3],1,0,'C');
 				$this->Cell($w[4],8,$columna[4],1,0,'C');
 				$this->Cell($w[5],8,$columna[5],1,0,'C');	
-				$this->Cell($w[6],8,ManejadorSolicitud::obtenerTotalHoras($id,$_GET['fi'], $_GET['ff'], 1 ),1,0,'C');
-				$this->Cell($w[7],8,ManejadorSolicitud::obtenerTotalHoras($id,$_GET['fi'], $_GET['ff'], 0 ),1,0,'C');	
+				$this->Cell($w[6],8,$horaferiada,1,0,'C');
+				$this->Cell($w[7],8,$horanormal,1,0,'C');
+				$this->Cell($w[8],8,$pagoferiado,1,0,'C');
+				$this->Cell($w[9],8,$pagonormal,1,0,'C');	
 			}
 			$this->Ln();
 		}
@@ -198,7 +215,7 @@ class PDF extends FPDF
 	}
 }
 // Creación del objeto de la clase heredada
-$pdf=new PDF('L', 'mm', 'A4');
+$pdf=new PDF('L', 'mm', 'LEGAL');
 $pdf->AliasNbPages();
 $pdf->AddPage();
 $pdf->setAutoPageBreak(true,50);

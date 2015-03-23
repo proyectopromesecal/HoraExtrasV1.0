@@ -18,7 +18,7 @@ include_once("Clases/Extractor.php");
 include_once("Clases/Transporte.php");
 include_once("Clases/ManejadorTransporte.php");
 include_once("Clases/Correo.php");
-include_once("Clases/ManejadorCorreo.php");
+//include_once("Clases/ManejadorCorreo.php");
 include_once("Clases/SolicitudAutorizada.php");
 include_once("Clases/ManejadorSAutorizadas.php");
 include_once("Clases/DietaViatico.php");

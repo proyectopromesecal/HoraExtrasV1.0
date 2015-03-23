@@ -76,7 +76,7 @@ if($_POST)
 				}
 				else
 				{
-					if(($m->obtenerHoras($id, $hor) >8) or($m->obtenerHoras($id, $hor) ==8 && $m->obtenerMinutos($id, $hor) >=30))
+					if(($m->obtenerHoras($id, $hor) >8 ) or($m->obtenerHoras($id, $hor) ==8 && $m->obtenerMinutos($id, $hor) >=30))
 					{
 						$arrayGuardar[] = $id;
 						$horarios[] = $hor;
@@ -102,7 +102,7 @@ if($_POST)
 			{
 				echo "<script language='javascript' type='text/javascript'>alert('Los Siguientes empleados no cumplen con el tiempo extra requerido:\\n{$mensaje}')</script>";
 			}
-				//header('Location:index.php');
+			//header('Location:index.php');
 		}
 		else
 		{

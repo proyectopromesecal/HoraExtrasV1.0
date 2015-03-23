@@ -521,7 +521,7 @@
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 
-			$query="SELECT [dbo].[totalHoras] 
+			$query="SELECT * from [dbo].[totalHorasTable] 
 					(
 						{$idE}
 						,{$f}
@@ -533,8 +533,10 @@
 			{
 				if(sqlsrv_num_rows($rs)>0)
 				{
-					$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_NUMERIC);
-					$horas.= $fila[0];
+					while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+					{
+						$horas.= $fila['hora']."/*".$fila['pago'];
+					}
 				}
 				else
 				{

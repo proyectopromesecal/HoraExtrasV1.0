@@ -240,16 +240,21 @@ class ManejadorTransporte
 		sqlsrv_query($_SESSION['con'], $query2);
 	}
 
-	static function verificarHeTrans($idT, $idS)
+	static function verificarHeTrans($idT)
 	{
 		$flag=false;
 		$query="SELECT * FROM horaextra_transporte
 				WHERE id_formulario_transporte ={$idT}";
-		$rs = sqlsrv_query($_SESSION['con'], $query);
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
 		{
-			if(sqlsrv_num_rows($rs)==0)
+			if($rs)
 			{
-				$flag=true;
+				if(sqlsrv_num_rows($rs)===0)
+				{
+					$flag=true;
+				}				
 			}
 		}
 		return $flag;

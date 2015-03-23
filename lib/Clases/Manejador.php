@@ -179,8 +179,8 @@ class Manejador
 		$horastr='';$minutostr='';
 		if($feriado)
 		{
-				$horas=$this->obtenerHoras($id,$horario, $feriado);
-				$minutos=$this->obtenerMinutos($id, $horario, $feriado);
+				$horas=Manejador::obtenerHoras($id,$horario, $feriado);
+				$minutos=Manejador::obtenerMinutos($id, $horario, $feriado);
 
 				if ($horas <=9) {
 					$horastr= "0".$horas;
@@ -197,14 +197,14 @@ class Manejador
 		}
 		else
 		{
-			if($this->obtenerHoras($id,$horario, $feriado) ==0 && $this->obtenerMinutos($id, $horario, $feriado) ==0)
+			if(Manejador::obtenerHoras($id,$horario, $feriado) ==0 && Manejador::obtenerMinutos($id, $horario, $feriado) ==0)
 			{
 				$tiempoTotal = '------';
 			}
 			else
 			{
-				$horas=$this->obtenerHoras($id,$horario, $feriado)-8;
-				$minutos=$this->obtenerMinutos($id, $horario, $feriado);
+				$horas=Manejador::obtenerHoras($id,$horario, $feriado)-8;
+				$minutos=Manejador::obtenerMinutos($id, $horario, $feriado);
 
 				if ($horas<0) {
 					$horastr="00";

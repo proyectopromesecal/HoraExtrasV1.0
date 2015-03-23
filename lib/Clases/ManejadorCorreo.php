@@ -3,8 +3,8 @@
 	$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
 	if(strstr($url,"reportes/") or strstr($url,"reloj/"))
 	{
-		include("../lib/PHPMailer/class.phpmailer.php");
-		include("../lib/PHPMailer/class.smtp.php"); 
+		include("../../lib/PHPMailer/class.phpmailer.php");
+		include("../../lib/PHPMailer/class.smtp.php"); 
 		//echo $ruta;
 	}
 	else
