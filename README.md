@@ -28,7 +28,7 @@ Para ejecutar HoraExtra, necesitas un servidor con preconfiguración LAMP/WAMP/X
 
 1.  **Clonar el repositorio**:
     ```bash
-    git clone https://github.com/tu-usuario/HoraExtra.git
+    git clone https://github.com/proyectopromesecal/HoraExtrasV1.0.git
     cd HoraExtra
     ```
 
