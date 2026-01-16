@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Documentación de Liberación - HoraExtra v1.0</title>
+    <style>
+        body {
+            font-family: 'Calibri', sans-serif;
+            line-height: 1.5;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2E74B5;
+            border-bottom: 2px solid #2E74B5;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+
+        h2 {
+            color: #1F4D78;
+            margin-top: 30px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .evidence-box {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+
+        .evidence-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+            color: #555;
+        }
+
+        .placeholder-img {
+            width: 100%;
+            height: 200px;
+            background-color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #999;
+            color: #666;
+            font-style: italic;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            color: #333;
+        }
+
+        .code-block {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-left: 3px solid #2E74B5;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1 style="text-align: center; border: none; margin-top: 0;">Informe de Liberación de Software</h1>
+    <h2 style="text-align: center; color: #555; margin-top: 0;">Proyecto: HoraExtra</h2>
+
+    <p><strong>Versión:</strong> 1.0.0</p>
+    <p><strong>Fecha:</strong> 16 de Enero, 2026</p>
+    <p><strong>Repositorio:</strong> https://github.com/proyectopromesecal/HoraExtrasV1.0.git</p>
+
+    <h1>1. Resumen Ejecutivo</h1>
+    <p>El presente documento certifica la liberación de la versión 1.0 del sistema <strong>HoraExtra</strong>, una
+        solución web integral diseñada para la gestión, cálculo y autorización de nómina de horas extraordinarias y
+        viáticos. El sistema ha sido auditado, limpiado de datos sensibles y preparado para su publicación bajo licencia
+        de código abierto (MIT).</p>
+
+    <h1>2. Alcance Funcional</h1>
+    <p>La versión liberada cubre los siguientes módulos operativos:</p>
+    <ul>
+        <li><strong>Autenticación y Roles:</strong> Gestión de acceso seguro para empleados y administradores.</li>
+        <li><strong>Gestión de Horas Extra:</strong> Solicitud, validación contra reloj biométrico y aprobación
+            jerárquica.</li>
+        <li><strong>Módulo de Viáticos:</strong> Control de gastos de viaje y dietas.</li>
+        <li><strong>Reportes:</strong> Generación de PDFs para nómina y auditoría.</li>
+    </ul>
+
+    <h1>3. Evidencia del Sistema</h1>
+    <p>A continuación se presentan las pantallas principales que constituyen la interfaz de usuario del sistema.</p>
+
+    <div class="evidence-box">
+        <span class="evidence-title">Figura 1: Pantalla de Login (Acceso Seguro)</span>
+        <!-- NOTA PARA EL USUARIO: Reemplazar esta imagen por una captura real de 'Login.php' -->
+        <div class="placeholder-img">
+            <img src="pics/loginhe2.png" alt="Pantalla de Login" style="max-width: 100%; max-height: 300px;">
+        </div>
+        <p style="font-size: 0.9em; margin-top: 10px;">Interfaz de entrada principal para todos los usuarios.</p>
+    </div>
+
+    <div class="evidence-box">
+        <span class="evidence-title">Figura 2: Panel Principal (Dashboard)</span>
+        <!-- NOTA PARA EL USUARIO: Pegar aquí captura del menú principal -->
+        <div class="placeholder-img">
+            <img src="pics/Dashboard.png" alt="Pantalla de Login" style="max-width: 100%; max-height: 300px;">
+        </div>
+        <p style="font-size: 0.9em; margin-top: 10px;">Vista central que permite la navegación a los distintos módulos
+            (Solicitudes, Reportes, Mantenimiento).</p>
+    </div>
+
+    <div class="evidence-box">
+        <span class="evidence-title">Figura 3: Formulario de Solicitudes</span>
+        <!-- NOTA PARA EL USUARIO: Pegar aquí captura de un formulario -->
+        <div class="placeholder-img">
+            <img src="pics/Formulario_Solicitudes.png" alt="Pantalla de Login"
+                style="max-width: 100%; max-height: 300px;">
+        </div>
+        <p style="font-size: 0.9em; margin-top: 10px;">Formulario estandarizado para la creación de nuevas peticiones de
+            horas extra.</p>
+    </div>
+
+    <h1>4. Información Técnica de Liberación</h1>
+    <p>Se han realizado las siguientes acciones para garantizar una liberación segura y profesional:</p>
+
+    <div class="code-block">
+        <strong>Acciones de Limpieza:</strong><br>
+        1. Eliminación de credenciales hardcodeadas en `lib/conexion.php`.<br>
+        2. Implementación de carga de variables de entorno (.env).<br>
+        3. Generación de documentación técnica (README.md, LICENSE).
+    </div>
+
+    <h2>Requisitos de Despliegue</h2>
+    <table>
+        <tr>
+            <th>Componente</th>
+            <th>Requisito</th>
+        </tr>
+        <tr>
+            <td>Servidor Web</td>
+            <td>Apache 2.4+</td>
+        </tr>
+        <tr>
+            <td>Lenguaje</td>
+            <td>PHP 7.4 / 8.0</td>
+        </tr>
+        <tr>
+            <td>Base de Datos</td>
+            <td>SQL Server 2012+</td>
+        </tr>
+    </table>
+
+    <h1>5. Conclusión</h1>
+    <p>El proyecto <strong>HoraExtra</strong> cumple con los estándares requeridos para su liberación. Su arquitectura
+        modular y la documentación adjunta facilitarán su adopción y mantenimiento por parte de la comunidad de código
+        abierto.</p>
+
+    <br><br>
+    <p style="text-align: center;">______________________________________<br>Firma del Responsable de Desarrollo</p>
+
+</body>
+
+</html>
