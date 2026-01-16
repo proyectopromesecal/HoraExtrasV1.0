@@ -5,11 +5,28 @@
     <meta charset="UTF-8">
     <title>Documentación de Liberación - HoraExtra v1.0</title>
     <style>
+        /* Configuración específica para Impresión / PDF (Carta) */
+        @media print {
+            @page {
+                size: letter;
+                margin: 2cm;
+            }
+
+            .evidence-box {
+                page-break-inside: avoid;
+            }
+
+            img {
+                max-height: 12cm !important;
+                /* Límite estricto para impresión */
+            }
+        }
+
         body {
             font-family: 'Calibri', sans-serif;
             line-height: 1.5;
             color: #333;
-            max-width: 800px;
+            max-width: 100%;
             margin: 0 auto;
             padding: 20px;
         }
