@@ -8,10 +8,15 @@ class conexion
 	
 	function __construct()
 	{
-		$info = array('Database'=>'horasextra', 'UID'=>'sa', 'PWD'=>'PromeseCal1525');
-		$this->con = sqlsrv_connect('PROMESEAPP01\RRINSIDEPROMESE', $info);
-		$query="use horasextra;";
-		$rs = sqlsrv_query($this->con, $query);
+		// Se asume que config.php ya cargó las variables de entorno
+		$info = array('Database'=>DB_NAME, 'UID'=>DB_USER, 'PWD'=>DB_PASS);
+		$this->con = sqlsrv_connect(DB_HOST, $info);
+		
+		// Verificamos si se conectó antes de tratar de usar la DB
+		if ($this->con) {
+			$query="use " . DB_NAME . ";";
+			$rs = sqlsrv_query($this->con, $query);
+		}
 		
 		if (!$this->con)
 		{

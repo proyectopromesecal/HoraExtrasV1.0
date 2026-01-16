@@ -1,153 +1,160 @@
 <?php 
-	include('lib/motor.php');
-	
-	if(!isset($_SESSION)){
-		session_start();
-	}
-	$s = new Seguridad();
-	if($s->verificar())
-	{
-		if(strcmp($s->verificarTipo(), "Administrador") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0)
-		{	
-			$_SESSION['rutaActual']="Mantenimiento > Empleados";
-			$m = new Manejador();
-			$e = new Empleado();
-			$dpt;
-			
-			#echo '<pre>';
-			#print_r($_POST);
-			#echo '</pre>';
-			
-			#echo '<pre>';
-			#print_r($_GET);
-			#echo '</pre>';
-			$msjError="";		
-		}
-		else
-		{
-			header("Location:index.php");
-		}
+include('lib/motor.php');
+
+if(!isset($_SESSION)){
+	session_start();
+}
+$s = new Seguridad();
+
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+
+if($s->verificar())
+{
+	if($s->verificar() == 'SuperAdmin' or in_array("Administrador", $_SESSION['permisos']))
+	{	
+		$_SESSION['rutaActual']="Mantenimiento > Empleados";
+		$m = new Manejador();
+		$e = new Empleado();
+		$dpt;
+		
+		#echo '<pre>';
+		#print_r($_POST);
+		#echo '</pre>';
+		
+		#echo '<pre>';
+		#print_r($_GET);
+		#echo '</pre>';
+		$msjError="";		
 	}
 	else
 	{
-		header('Location:Login.php');
+		header("Location:index.php");
 	}
-	if ($_POST)
+}
+else
+{
+	header('Location:Login.php');
+}
+if ($_POST)
+{
+	if(isset($_POST['btnEditar']))
 	{
-		if(isset($_POST['btnEditar']))
+		if(isset($_POST['check']))
 		{
-			if(isset($_POST['check']))
+			$t = count($_POST["check"]);
+			if($t>1)
 			{
-				$t = count($_POST["check"]);
-				if($t>1)
-				{
-					echo "<script>alert('Para editar seleccione solo 1 empleado');</script>";	
-				}
-				else
-				{
-					foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
-					{
-						header("Location:mantenimientoEmpleados.php?edit={$valor}");
-					}			
-				}
+				echo "<script>alert('Para editar seleccione solo 1 empleado');</script>";	
 			}
 			else
 			{
-				echo "<script>alert('Seleccione un empleado para editar);</script>";
+				foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
+				{
+					header("Location:mantenimientoEmpleados.php?edit={$valor}");
+				}			
 			}
 		}
-		else if(isset($_POST['btnEliminar']))
+		else
 		{
-			if(isset($_POST['check']))
+			echo "<script>alert('Seleccione un empleado para editar);</script>";
+		}
+	}
+	else if(isset($_POST['btnEliminar']))
+	{
+		if(isset($_POST['check']))
+		{
+			$t = count($_POST["check"]);
+			if($t>1)
 			{
-				$t = count($_POST["check"]);
-				if($t>1)
-				{
-					echo "<script>alert('Para eliminar seleccione solo 1 empleado');</script>";	
-				}
-				else
-				{
-					foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
-					{
-						header("Location:mantenimientoEmpleados.php?del={$valor}");
-					}			
-				}
+				echo "<script>alert('Para eliminar seleccione solo 1 empleado');</script>";	
 			}
 			else
 			{
-				echo "<script>alert('Seleccione un empleado para editar);</script>";
-			}	
-		}
-		if(isset($_POST['btnNuevo']))
-		{
-			header('Location:mantenimientoEmpleados.php');	
-		}
-		if(isset($_POST['btnGuardar']))
-		{
-			if($_POST['txtNombre']!='' && $_POST['txtDepartamento']!='todos' && $_POST['txtCargo']!='' && $_POST['txtCedula']!='' && $_POST['txtCodigoEmpleado']!='' && $_POST['txtSueldo']!='')
-			{
-				if(!is_numeric($_POST['txtCedula']) )
+				foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
 				{
-					$msjError = "El campo cedula debe ser numerico, sin guiones ni espacios.";
-				}
-				else if(!is_numeric($_POST['txtSueldo']))
-				{
-					$msjError = "El campo sueldo debe ser numerico, sin guiones no espacios.";
-				}
-				else if(ManejadorCargo::evaluarSueldo($_POST['txtCargo'], $_POST['txtSueldo']))
-				{
-					$e->setID($_POST['txtID']);
-					$e->setNombre($_POST['txtNombre']);
-					$e->setDepartamento($_POST['txtDepartamento']);
-					$e->setCargo($_POST['txtCargo']);
-					$e->setCedula($_POST['txtCedula']);
-					$e->setCodigoEmpleado($_POST['txtCodigoEmpleado']);
-					$e->setSueldo($_POST['txtSueldo']);
-					$e->setHorarioEspecial($_POST['radHorario']);
-					$e->setTipoViatico($_POST['slcViatico']);
-					$e->guardar();	
-					$msjError ="";
-					header('Location:mantenimientoEmpleados.php');				
-				}
-				else
-				{
-					echo "<script>alert('El sueldo correspondiente a ese cargo no se encuentra en el rango establecido');</script>";	
-				}
+					header("Location:mantenimientoEmpleados.php?del={$valor}");
+				}			
 			}
-			else
-			{
-				$msjError= "Faltan campos por completar.";
-			}		
 		}
+		else
+		{
+			echo "<script>alert('Seleccione un empleado para editar);</script>";
+		}	
 	}
-	else if (isset($_GET['edit']))
+	if(isset($_POST['btnNuevo']))
 	{
-		$e->setID($_GET['edit']);
-		$e->cargar();
+		header('Location:mantenimientoEmpleados.php');	
 	}
-	else if (isset($_GET['del']))
+	if(isset($_POST['btnGuardar']))
 	{
-		$e->eliminar($_GET['del']);
+		if($_POST['txtNombre']!='' && $_POST['txtDepartamento']!='todos' && $_POST['txtCargo']!='' && $_POST['txtCedula']!='' && $_POST['txtSueldo']!='')
+		{
+			if(!is_numeric($_POST['txtCedula']) )
+			{
+				$msjError = "El campo cedula debe ser numerico, sin guiones ni espacios.";
+			}
+			else if(!is_numeric($_POST['txtSueldo']))
+			{
+				$msjError = "El campo sueldo debe ser numerico, sin guiones no espacios.";
+			}
+			else{
+				$e->setID($_POST['txtID']);
+				$e->setNombre($_POST['txtNombre']);
+				$e->setDepartamento($_POST['txtDepartamento']);
+				$e->setCargo($_POST['txtCargo']);
+				$e->setCedula($_POST['txtCedula']);
+				$e->setCodigoEmpleado($_POST['txtCodigoEmpleado']);
+				$e->setSueldo($_POST['txtSueldo']);
+				$e->setHorarioEspecial($_POST['radHorario']);
+				$e->setTipoViatico($_POST['slcViatico']);
+				$e->setNivel($_POST['slcPerfil']);
+				$e->guardar();	
+				$msjError ="";
+				header('Location:mantenimientoEmpleados.php');					
+			}
+		}
+		else
+		{
+			$msjError= "Faltan campos por completar.";
+		}		
 	}
+}
+else if (isset($_GET['edit']))
+{
+	$e->setID($_GET['edit']);
+	$e->cargar();
+}
+else if (isset($_GET['del']))
+{
+	$e->eliminar($_GET['del']);
+}
 ?>
 <html>
 	<head>
 		<title>Mantenimiento de Empleados</title>
-		<style type="text/css">
-			legend
-			{
-				background: #EDE8E8;
-				border: solid 1px black;
-				-webkit-border-radius: 8px;
-				-moz-border-radius: 8px;
-				border-radius: 8px;
-				padding: 6px;
-				font-family:"Lucida Console", Monaco, monospace;
-				font-size:16px;
-				font-weight:bold;
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<script src="css/jquery.maskedinput.js" type="text/javascript"></script>
+		<style>
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
 			}
 		</style>
-		<script>			
+		<script>		
+			$(function(){
+				$('#sueldo').mask("999999.99");
+				$('#cedula').mask("99999999999");
+			});
+
 			function getDpto()
 			{
 				var d;
@@ -159,7 +166,7 @@
 			}
 			
 			function buscar(obj)
-			{
+			{				
 				v = obj.value;
 				$.post('getEmpleados.php',{valor:v}, function(datos)
 				{
@@ -167,124 +174,120 @@
 				});
 			}
 		</script>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
-		<script src="css/jquery-2.0.3.min.js" type="text/javascript"></script>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 	</head>
 	<body>
-		<?php include("menu.html");?>
-		<div id='page'>
-			<br>
-			<center>
-				<?php echo $msjError;?>
-				<div style="width:70%;height:70%" class="tab_cadre_fixe">
-					<form method='post' action='mantenimientoEmpleados.php' class="formee">
-						<center>											
-							<br>
-							<div style="width:100%;">	
-								<div style="width:100%;float:left;" >
-									<button type="submit" name="btnNuevo" title="Nuevo Empleado"><img src='pics/add.png'></button> &nbsp 
-									<button type="submit" name="btnEditar" title="Editar Empleado"><img src='pics/edit.png'></button> &nbsp 
-									<button type="submit" name="btnEliminar" title="Eliminar Empleado"><img src='pics/delete.png' height="16" width="16"></button>&nbsp 
-									<button type="submit" name="btnGuardar" title="Guardar Cambios"><img src='pics/sauvegardes.png' height="16" width="16"></button> &nbsp 
-									<input type="search" name="txtBuscar" onkeyup="buscar(this);" placeholder="Buscar empleado">
-								</div><br><br>
-								<div style="height:325px;overflow:auto;width:100%;"><br>
-									<table class='tab_cadre_fixe' style="width:100%;" >
-										<tr class='tab_bg_2'>
-											<th>Seleccion</th><th>Cedula</th><th>Nombres y Apellidos</th><th>Cargo</th><th>Departamento</th><th>Sueldo</th>
-										</tr>
-										<tbody id='tabla'>
-											<?php 
-												$rs = Manejador::obtenerEmpleados();
-												if($rs)
-												{
-													while($fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-													{
-														echo "
-														<tr class='tab_bg_2'>
-															<td align='center'><input type='checkbox' name='check[]' value='{$fila['id']}' readonly></input></td>
-															<td>{$fila['cedula']}</td>
-															<td>{$fila['nombre']}</td>
-															<td>{$fila['cargo']}</td>
-															<td>{$fila['departamento']}</td>
-															<td>{$fila['sueldo']}</td>
-														</tr>";
-													}
-												}
-												else
-												{
-													echo "Hubo un problema cargando los empleados de la base de datos.";
-												}
-											?>										
-										</tbody>
-
-									</table>					
-								</div>								
-							</div>
-						</center>
-						<br>
-						<div style="width:48%;float:left;">
-							<table style="width:60%;" class="tab_cadre_fixe" >
-								<tr class="tab_bg_1">
-									<td><input type='hidden' name='txtID' value='<?php echo $e->getID();?>'></input></td>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label>Nombres y Apellidos:</label></td>
-									<td><input id='tn' type="text" name='txtNombre' style='width:200px;' value='<?php echo $e->getNombre();?>'></input></td>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label >Departamento:</label></td>
-									<td><select id='dep' name='txtDepartamento'  onChange="getDpto()" style='width:200px;'><?php echo $m->obtenerDepartamentos($e->getDepartamento());?></select>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label >Cargo:</label></td>
-									<td><select id='carg' name='txtCargo' style='width:200px;'><?php ManejadorCargo::obtenerCargo($e->getCargo());?> </select></td>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label >Cedula:</label></td>
-									<td><input id='txtMantenimiento' type="text" name='txtCedula' style='width:200px;' value='<?php echo $e->getCedula();?>' maxlength="11"></input></td>
-								</tr>
-							</table>						
+		<header>
+			<?php include("menu.html");?>
+		</header>
+		
+		<div id='contenido'>
+			<div class="container-fluid body-content">
+				<form method='post' action='mantenimientoEmpleados.php'>
+					<div class="row">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<?php echo $msjError;?>
 						</div>
-						<div style="width:48%;float:right;margin-top:6px;">
-							<table style="width:80%;" class="tab_cadre_fixe" >
-								<tr class="tab_bg_1" width="150px">
-									<td><label >Codigo de empleado:</label></td>
-									<td><input id='txtMantenimiento' type="text" name='txtCodigoEmpleado' value='<?php echo $e->getCodigoEmpleado();?>'></input></td>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label><label id='lb'>Sueldo:</label></label></td>
-									<td><input id='txtMantenimiento' type="text" name='txtSueldo' value='<?php echo $e->getSueldo();?>'></input></td>
-								</tr>
-								<tr class="tab_bg_1">
-									<td><label ><label id='lb'>Horario Especial:</label></label></td>
-									<td>
+					</div>
+					<div class="row">
+						<fieldset style="width:90%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+							<legend>Opciones</legend>
+							<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+								<button type="submit" name="btnNuevo" title="Nuevo Empleado" class="btn btn-info btn-block"><img src='pics/add.png'></button>
+							</div>
+							<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+								<button type="submit" name="btnEditar" title="Editar Empleado" class="btn btn-warning btn-block"><img src='pics/edit.png'></button> 
+							</div>
+							<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+								<button type="submit" name="btnEliminar" title="Eliminar Empleado" class="btn btn-warning btn-danger btn-block"><img src='pics/delete.png' height="16" width="16"></button>
+							</div>
+							<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+								<button type="submit" name="btnGuardar" title="Guardar Cambios" class="btn btn-primary btn-block"><img src='pics/sauvegardes.png' height="16" width="16"></button> 
+							</div>
+							<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+								<input type="search" name="txtBuscar" onkeyup="buscar(this);" placeholder="Buscar empleado por nombre o apellido" class="form-control">
+							</div>
+						</fieldset> 		
+					</div><br>
+					<div class="row">
+						<fieldset style="width:90%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+							<legend>Lista</legend>
+							<div style="height:325px;overflow:auto;width:95%;margin: 0 auto;"><br>
+								<table id='tabla' class='table table-striped' style="width:100%;" >
+									<tr>
+										<th>Seleccion</th><th>Cedula</th><th>Nombres y Apellidos</th><th>Cargo</th><th>Departamento</th><th>Sueldo</th>
+									</tr>																
+								</table>					
+							</div>	
+						</fieldset>							
+					</div>
+					<br>
+					<div class="row">
+						<fieldset style="width:90%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+							<legend>Datos</legend>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<input type='hidden' name='txtID' value='<?php echo $e->getID();?>'>
+								<div class="form-group">
+									<label>Nombres y Apellidos:</label>
+									<input id='tn' type="text" name='txtNombre' class="form-control" value='<?php echo $e->getNombre();?>' placeholder="Nombres y apellidos completos">
+								</div>
+								<div class="form-group">
+									<label>Departamento:</label>
+									<select id='dep' name='txtDepartamento'  onChange="getDpto()" class="form-control"><?php echo $m->obtenerDepartamentos($e->getDepartamento());?></select>
+								</div>
+								<div class="form-group">
+									<label>Cargo:</label>
+									<select id='carg' name='txtCargo' class="form-control"><?php ManejadorCargo::obtenerCargo($e->getCargo());?> </select>
+								</div>
+								<div class="form-group">
+									<label >C&eacute;dula:</label>
+									<input id='cedula' type="text" name='txtCedula' class="form-control" value='<?php echo $e->getCedula();?>' maxlength="11" placeholder="ej. 10236548788"></input>
+								</div>
+								<div class="form-group">
+									<label>C&oacute;digo de empleado</label>
+									<input type="text" name='txtCodigoEmpleado' value='<?php echo $e->getCodigoEmpleado();?>' class='form-control' placeholder="Codigo de Punch"></input>
+								</div>
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+
+								<div class="form-group">
+									<label>Sueldo</label>
+									<input id='sueldo' type="text" name='txtSueldo' value='<?php echo $e->getSueldo();?>' class='form-control' placeholder="ej. 10000 RD$"></input>
+								</div>
+								<div class="form-group">
+									<label>Horario Especial:</label>
 										<?php 
 											if($e->getHorarioEspecial())
 											{
 												echo "
-												Si<input type='radio' name='radHorario' value='1' checked='checked'></input>
-												/ No<input type='radio' name='radHorario' value='0'></input>	";										
+												Si <input type='radio' name='radHorario' value='1' checked='checked' ></input>
+												/ No <input type='radio' name='radHorario' value='0' ></input>	";										
 											}
 											else
 											{
 												echo "
-												Si<input type='radio' name='radHorario' value='1'></input>
-												/ No<input type='radio' name='radHorario' value='0' checked='checked'></input>	";																				
+												Si <input type='radio' name='radHorario' value='1' ></input>
+												/ No <input type='radio' name='radHorario' value='0' checked='checked' ></input>	";																				
 											}
 										?>
-									</td>
-								</tr>
-								<tr>
-									<td><label>Perfil Viatico: </label></td>
-									<td><select name="slcViatico"><?php ManejadorDietaViatico::obtenerPerfiles($e->getTipoViatico())?></select></td>
-								</tr>					
-							</table>									
-						</div>					
-					</form>
-				</div>			
-			</center>
+								</div>
+								<div class="form-group">
+									<label>Perfil Vi&aacute;tico: </label>
+									<select name="slcViatico" class="form-control"><?php ManejadorDietaViatico::obtenerPerfiles($e->getTipoViatico())?></select>
+								</div>
+								<div class="form-group">
+									<label>Nivel: </label>
+									<select name="slcPerfil" class="form-control">
+										<?php Manejador::obtenerNivelSlc($e->getID())?>
+										<option value="0">0</option>
+										<option value="1">1</option>
+										<option value="2">2</option>
+									</select>
+								</div>
+							</div>
+						</fieldset>
+					</div>
+				</form>
+			</div>
 		</div>
 		<?php include("footer.html");?>
 	</body>

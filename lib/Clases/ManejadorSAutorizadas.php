@@ -3,7 +3,7 @@
 	{
 		static function obtenerFormulariosTransporte()
 		{
-			$query="SELECT formulario_transporte.id as id, formulario_transporte.fecha as fecha, formulario_transporte.no_oficio as no_oficio, solicitudhe.noOficio as HEnooficio 
+			$query="SELECT TOP 35 formulario_transporte.id as id, formulario_transporte.fecha as fecha, formulario_transporte.no_oficio as no_oficio, solicitudhe.noOficio as HEnooficio 
 					FROM formulario_transporte, solicitudhe, horaextra_transporte
 					WHERE NOT 
 					EXISTS (
@@ -25,7 +25,7 @@
 		
 		static function obtenerSolicitudesHE()
 		{
-			$query="SELECT * 
+			$query="SELECT TOP 50 * 
 					FROM solicitudhe
 					WHERE NOT 
 					EXISTS (
@@ -45,7 +45,7 @@
 		
 		static function obtenerTransporte()
 		{
-			$query="SELECT formulario_transporte.id as id, formulario_transporte.fecha as fecha, formulario_transporte.no_oficio as no_oficio, solicitudhe.noOficio as HEnooficio
+			$query="SELECT TOP 35 formulario_transporte.id as id, formulario_transporte.fecha as fecha, formulario_transporte.no_oficio as no_oficio, solicitudhe.noOficio as HEnooficio
 					FROM solicitudes_autorizadas, formulario_transporte, solicitudhe, horaextra_transporte
 					WHERE tipo='Transporte' and formulario_transporte.id = solicitudes_autorizadas.id_solicitud
 					AND solicitudhe.id = horaextra_transporte.id_solicitudhe
@@ -61,9 +61,10 @@
 		
 		static function obtenerHorasExtra()
 		{
-			$query="SELECT solicitudhe.id as id, solicitudhe.fecha as fecha, programado, autorizado, id_solicitud, solicitudhe.departamento as departamento, usr
+			$query="SELECT TOP 500 solicitudhe.id as id, solicitudhe.fecha as fecha, programado, autorizado, id_solicitud, solicitudhe.departamento as departamento, usr
 					FROM solicitudes_autorizadas, solicitudhe
-					WHERE tipo='HoraExtra' and solicitudhe.id = solicitudes_autorizadas.id_solicitud";
+					WHERE tipo='HoraExtra' and solicitudhe.id = solicitudes_autorizadas.id_solicitud
+					ORDER BY solicitudhe.fecha desc";
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 			$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
@@ -75,9 +76,19 @@
 		
 		static function obtenerDietaViatico()
 		{
-			$query="SELECT dietaviatico.id as id, dietaviatico.no_oficio as no_oficio, dietaviatico.fecha_creacion as fecha, dietaviatico.departamento as departamento, autorizado, dietaviatico.usr 
-					FROM solicitudes_autorizadas, dietaviatico
-					WHERE tipo='Viatico' and dietaviatico.id = solicitudes_autorizadas.id_solicitud";
+			$query="SELECT TOP 35 dv.id as id, dv.no_oficio as no_oficio, dv.fecha_creacion as fecha, dv.departamento as departamento, autorizado, dv.usr 
+					FROM solicitudes_autorizadas saut
+					inner join dietaviatico dv on dv.id = saut.id_solicitud
+					WHERE tipo='Viatico' and dv.id = saut.id_solicitud
+					AND dv.usr in (
+						SELECT a.usuario
+						FROM [horasextra].[dbo].[usuario] a
+						inner join empleado b on a.empleado =  b.id
+						where b.departamento in (
+							SELECT b.id from  usuario c
+							inner join empleado a on c.empleado = a.id
+							inner join t_departamento b on a.departamento = b.id or a.departamento = b.subDepId 
+							where c.usuario = '{$_SESSION['usuario']}'))";
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 			$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
@@ -89,16 +100,25 @@
 		
 		static function obtenerSolicitudesDV()
 		{
-			$query="SELECT * 
-					FROM dietaviatico
+			$query="SELECT TOP 35 * 
+					FROM dietaviatico dv
 					WHERE NOT 
-					EXISTS (
-
-					SELECT 1 
-					FROM solicitudes_autorizadas
-					WHERE solicitudes_autorizadas.id_solicitud = dietaviatico.id
-					and tipo='Viatico'
-					)";
+					EXISTS 
+					(
+						SELECT 1 
+						FROM solicitudes_autorizadas s
+						WHERE s.id_solicitud = dv.id
+						and tipo='Viatico' 
+					) 
+					AND dv.usr in (
+						SELECT a.usuario
+						FROM [horasextra].[dbo].[usuario] a
+						inner join empleado b on a.empleado =  b.id
+						where b.departamento in (
+							select b.id from  usuario c
+							inner join empleado a on c.empleado = a.id
+							inner join t_departamento b on a.departamento = b.id or a.departamento = b.subDepId 
+							where c.usuario = '{$_SESSION['usuario']}'))";
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 			$rs =sqlsrv_query($_SESSION['con'], $query, $params, $options);
@@ -118,5 +138,7 @@
 			$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
 			return $fila['comentario'];
 		}
+
+
 	}
 ?>

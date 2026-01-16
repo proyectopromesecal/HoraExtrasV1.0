@@ -9,6 +9,119 @@ if(!isset($_SESSION)){
 }
 class Manejador
 {		
+	function obtenerIncludes($url)
+	{
+		$includes="";
+		if(strstr($url,"reportes/") || strstr($url,"mantenimientos/") || strstr($url,"reloj/"))
+		{
+			$rutaBootstrapCss="../css/bootstrap.min.css";
+			$rutaCssGeneric="../css/estilo.css";
+			$rutaBootstrapJs="../js/bootstrap.min.js";
+			$rutaJqueryJs="../js/jquery.js";
+			$rutaJqueryMask="../js/jquery.mask.js";
+		}
+		else
+		{
+			$rutaBootstrapCss="css/bootstrap.min.css";
+			$rutaCssGeneric="css/estilo.css";
+			$rutaBootstrapJs="js/bootstrap.min.js";
+			$rutaJqueryJs="js/jquery.js";
+			$rutaJqueryMask="js/jquery.mask.js";
+		}	
+		$includes = "
+			<link rel='stylesheet' type='text/css' href='{$rutaBootstrapCss}'>
+			<link rel='stylesheet' type='text/css' href='{$rutaCssGeneric}'>
+			<script src='{$rutaJqueryJs}'></script>
+			<script src='{$rutaBootstrapJs}'></script>
+			<script src='{$rutaJqueryMask}'></script> ";
+		return $includes;
+	}
+
+	function obtenerIncludesJs($url)
+	{
+		$includes="";
+		if(strstr($url,"reportes/") or strstr($url,"mantenimientos/"))
+		{
+			$rutaBootstrapJs="../js/bootstrap.min.js";
+			$rutaJqueryJs="../js/jquery.js";
+			$rutaJqueryMask="../js/jquery.mask.js";
+		}
+		else
+		{
+			$rutaBootstrapJs="js/bootstrap.min.js";
+			$rutaJqueryJs="js/jquery.js";
+			$rutaJqueryMask="js/jquery.mask.js";
+		}	
+		$includes = "
+			<script src='{$rutaJqueryJs}'></script>
+			<script src='{$rutaBootstrapJs}'></script>
+			<script src='{$rutaJqueryMask}'></script> ";
+		return $includes;
+	}
+
+	function obtenerIncludesCss($url)
+	{
+		$includes="";
+		if(strstr($url,"reportes/") or strstr($url,"mantenimientos/"))
+		{
+			$rutaBootstrapCss="../css/bootstrap.min.css";
+			$rutaCssGeneric="../css/estilo.css";
+
+		}
+		else
+		{
+			$rutaBootstrapCss="css/bootstrap.min.css";
+			$rutaCssGeneric="css/estilo.css";
+		}	
+		$includes = "
+			<link rel='stylesheet' type='text/css' href='{$rutaBootstrapCss}'>
+			<link rel='stylesheet' type='text/css' href='{$rutaCssGeneric}'>";
+		return $includes;
+	}
+
+	static function crearBreadCrumbs($ruta)
+	{
+		$bc="";
+		if (strpos($ruta, '>') !== false) {
+			$temp = explode(">", $ruta);
+			foreach ($temp as $value) {
+				if(end($temp) == $value){
+				    $bc.= "<li><span>{$value}</span></li>";
+				}
+				else
+				{
+					$bc.= "<li><a href='#'>{$value}</a></li>";
+				}	
+			}
+		}
+		else
+		{
+			$bc.= "<li><a class='active'>{$ruta}</a></li>";
+		}
+
+		return $bc;
+	}
+
+	static function obtenerUsuariosSlc($asistente)
+	{
+		$query="SELECT a.id, a.usuario
+				FROM [horasextra].[dbo].[usuario] a
+				inner join empleado b on a.empleado =  b.id
+				inner join t_departamento c on b.departamento = c.id
+				where b.departamento in (
+					select b.id from  usuario c
+					inner join empleado a on c.empleado = a.id
+					inner join t_departamento b on a.departamento = b.id or a.departamento = b.subDepId 
+					where c.id = {$asistente})";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+				echo "<option value={$fila['id']}>{$fila['usuario']}</option>";
+			}
+		}
+	}
 	static function obtenerOrdenamientos()
 	{
 		echo "
@@ -80,11 +193,11 @@ class Manejador
 		";
 	}
 		
-	static function obtenerDepartamentos($preferido)
+	static function obtenerDepartamentos($preferido=0)
 	{
 		$query="SELECT DISTINCT t_departamento.nombre as departamento, t_departamento.id as id
-				FROM empleado, t_departamento
-				WHERE empleado.departamento = t_departamento.id";
+				FROM t_departamento
+				order by departamento";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
@@ -107,11 +220,13 @@ class Manejador
 			}
 		}
 	}
-	//obtiene la informacion de los empleados seleccionados
+	//obtiene la informacion de los empleados de una solicitud
     function obtenerSeleccionados($arrayid,$arhorario, $fecha)
 	{
 		$i =0;$feriado;
+		$noCumple=false;
 		$datos = Array();
+		$msjNoCumple="";
 		foreach($arrayid as $ids)
 		{
 			$query="SELECT empleado.id as id, empleado.nombre as nombre, cedula, t_cargo.nombre as cargo, t_departamento.nombre as departamento, fecha as fecha, convert(varchar,horadeentrada, 108) as horadeentrada, 
@@ -142,10 +257,18 @@ class Manejador
 							$tiempoExtra = $this->obtenerTiempoExtraF($fila['id'],$arhorario[$i]);
 							$pago = round($c->calcularHoraExtraNormal($this->obtenerCantidadHoras($fila['id'], $arhorario[$i]),$fila['sueldo']),2);	
 						}
-						if($pago >0)
+						if (Manejador::validarPago($fila['id'],$_SESSION['fechasolicitud']))
 						{
-							//$datos[] = $fila['nombre'].";".$fila['cedula'].";".$fila['cargo'].";".$fila['departamento'].";".$fila['fecha']->format('d/m/Y').";".$fila['horadeentrada'].";".$fila['horadesalida'].";".$tiempoExtra.";".$pago;
+							$noCumple = true;
+							$msjNoCumple=" +30% ";
 						}
+						/*
+						else if ($pago + Manejador::obtenerAcumuladoHE($fila['id'],$_SESSION['fechasolicitud']) > $porciento)
+						{
+							$noCumple = true;
+							$msjNoCumple=" pago + acumulado > 30% ";
+						}
+						*/
 						if(strcmp($fila['horadeentrada'], "00:00:00")==0)
 						{
 							$fila['horadeentrada']='-----';
@@ -154,24 +277,39 @@ class Manejador
 						{
 							$fila['horadesalida']='-----';
 						}
-						echo "<tr class='tab_bg_2'>
-									<td align='center'><input type='checkbox' name='check[]' value='{$fila['id']}-{$arhorario[$i]}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtNombre' value='{$fila['nombre']}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtCedula' value='{$fila['cargo']}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtCargo' value='{$fila['cedula']}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtFecha' value='{$fila['fecha']->format('d/m/Y')}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtHoraEntrada' value='{$fila['horadeentrada']}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtHoraSalida' value='{$fila['horadesalida']}' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtTiempoExtra' value='{$tiempoExtra}' readonly ></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtPorciento' value='{$porciento} RD$' readonly></input></td>
-									<td><input id='txt' style='width: 100%;' type='text' name='txtPago' value='{$pago} RD$' readonly></input></td>
-							 </tr>";
+
+						if ($tiempoExtra < "00:30:00") {
+							$noCumple=true;
+							$msjNoCumple=" < 30 mins ";
+						}
+
+						echo "<tr class='tab_bg_2'>";
+						if ($noCumple) {
+							echo "<td align='center'><p>{$msjNoCumple}</p></input></td>";
+						}
+						else
+						{
+							$datos[$fila['id']] = $pago;
+							echo "<td align='center'><input type='checkbox' name='check[]' value='{$fila['id']}-{$arhorario[$i]}' readonly></input></td>";
+						}
+						echo "
+								<td><input id='txt' style='width: 100%;' type='text' name='txtNombre' value='{$fila['nombre']}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtCedula' value='{$fila['cargo']}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtCargo' value='{$fila['cedula']}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtFecha' value='{$fila['fecha']->format('d/m/Y')}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtHoraEntrada' value='{$fila['horadeentrada']}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtHoraSalida' value='{$fila['horadesalida']}' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtTiempoExtra' value='{$tiempoExtra}' readonly ></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtPorciento' value='{$porciento} RD$' readonly></input></td>
+								<td><input id='txt' style='width: 100%;' type='text' name='txtPago' value='{$pago} RD$' readonly></input></td>
+						 </tr>";
+						$noCumple=false;
 					}
 				}
 			}
 			$i++;
 		}
-		$_SESSION['datos'] = $datos;
+		$_SESSION['pagoemp'] = $datos;
 	}
 	function obtenerTiempoExtraF($id, $horario,$feriado=false)
 	{
@@ -179,11 +317,15 @@ class Manejador
 		$horastr='';$minutostr='';
 		if($feriado)
 		{
-				$horas=Manejador::obtenerHoras($id,$horario, $feriado);
-				$minutos=Manejador::obtenerMinutos($id, $horario, $feriado);
+				$horas=$this->obtenerHoras($id,$horario, $feriado);
+				$minutos=$this->obtenerMinutos($id, $horario, $feriado);
 
 				if ($horas <=9) {
 					$horastr= "0".$horas;
+				}
+				else
+				{
+					$horastr= $horas;
 				}
 				if ($minutos <=9) {
 					$minutostr= "0".$minutos;
@@ -197,14 +339,22 @@ class Manejador
 		}
 		else
 		{
-			if(Manejador::obtenerHoras($id,$horario, $feriado) ==0 && Manejador::obtenerMinutos($id, $horario, $feriado) ==0)
+			if($this->obtenerHoras($id,$horario, $feriado) ==0 && $this->obtenerMinutos($id, $horario, $feriado) ==0)
 			{
 				$tiempoTotal = '------';
 			}
 			else
 			{
-				$horas=Manejador::obtenerHoras($id,$horario, $feriado)-8;
-				$minutos=Manejador::obtenerMinutos($id, $horario, $feriado);
+				if($this->empleadoEspecial($id) && $feriado)
+				{
+					$horas=$this->obtenerHoras($id,$horario, $feriado);
+					$minutos=$this->obtenerMinutos($id, $horario, $feriado);
+				}
+				else
+				{
+					$horas=$this->obtenerHoras($id,$horario, $feriado)-8;
+					$minutos=$this->obtenerMinutos($id, $horario, $feriado);					
+				}
 
 				if ($horas<0) {
 					$horastr="00";
@@ -215,6 +365,10 @@ class Manejador
 					if ($horas <=9) 
 					{
 						$horastr= "0".$horas;
+					}
+					else
+					{
+						$horastr= $horas;
 					}
 
 					if ($minutos <=9) {
@@ -245,7 +399,7 @@ class Manejador
 			if(sqlsrv_num_rows($rs) >0)
 			{
 				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
-				if(strcmp($fila['horaentrada'], $fila['horasalida']) ==0)
+				if((strcmp($fila['horaentrada'], $fila['horasalida']) ==0 && strcmp($fila['minutoentrada'], $fila['minutosalida'])==0) || $fila['horasalida'] < $fila['horaentrada'])
 				{
 					$total=0;
 				}
@@ -298,7 +452,7 @@ class Manejador
 						$total += $horas;
 						if($minutos >=30)
 						{
-							$total+=1;				
+							$total+=0.5;				
 						}
 					}
 					else
@@ -312,7 +466,7 @@ class Manejador
 							if($horas-Horas_Laborables >=1 && $minutos>=30)
 							{
 								$total+=$horas-Horas_Laborables;
-								$total+=1;
+								$total+=0.5;
 								$termino = true;
 							}
 							else
@@ -330,7 +484,7 @@ class Manejador
 							{
 								if($minutos >=30)
 								{
-									$total+=1;				
+									$total+=0.5;				
 								}								
 							}
 						}
@@ -359,7 +513,7 @@ class Manejador
 			if(sqlsrv_num_rows($rs) >0)
 			{
 				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
-				if(strcmp($fila['horaentrada'], $fila['horasalida']) ==0)
+				if((strcmp($fila['horaentrada'], $fila['horasalida']) ==0 && strcmp($fila['minutoentrada'], $fila['minutosalida'])==0) || $fila['horasalida'] < $fila['horaentrada'])
 				{
 					$horas=0;
 				}
@@ -429,7 +583,7 @@ class Manejador
 			if(sqlsrv_num_rows($rs) >0)
 			{
 				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
-				if(strcmp($fila['horaentrada'], $fila['horasalida']) ==0)
+				if((strcmp($fila['horaentrada'], $fila['horasalida']) ==0 && strcmp($fila['minutoentrada'], $fila['minutosalida'])==0) || $fila['horasalida'] < $fila['horaentrada'])
 				{
 					$minutos=0;
 				}
@@ -496,7 +650,8 @@ class Manejador
 				return $fila['nombre'];
 			}
 		}	
-	}		
+	}
+
 	function guardarSeleccionados($arrayid, $arhorario, $fecha,$she='')
 	{
 		$i =0;$feriado;
@@ -531,28 +686,39 @@ class Manejador
 							$pago = round($c->calcularHoraExtraNormal($this->obtenerCantidadHoras($fila['id'],$arhorario[$i]),$fila['sueldo']),2);	
 							$feriado=0;
 						}
-						$query="SELECT horario.id AS id
-								FROM horario, empleado
-								WHERE empleado.id = horario.id_empleado AND horario.fecha = '{$fila['fecha']->format('Y-m-d')}' AND empleado.id = {$ids}";
-						$rsH = sqlsrv_query($_SESSION['con'],$query,$params, $options);
-						if($rsH)
+						if ($pago > $porciento) {
+							// lo que complete el 30%
+							$pago = Manejador::obtenerAcumuladoHE($fila['id'],$_SESSION['fechasolicitud']) - $porciento;
+						}
+
+						if ($pago ==0) {
+							# code...
+						}
+						else
 						{
-							while($filaH=sqlsrv_fetch_array($rsH, SQLSRV_FETCH_ASSOC))
+							$query="SELECT horario.id AS id
+									FROM horario, empleado
+									WHERE empleado.id = horario.id_empleado AND horario.fecha = '{$fila['fecha']->format('Y-m-d')}' AND empleado.id = {$ids}";
+							$rsH = sqlsrv_query($_SESSION['con'],$query,$params, $options);
+							if($rsH)
 							{
-
-								$queryDupl="SELECT * FROM historial_empleado
-											WHERE id_empleado = {$ids} AND id_horario = {$filaH['id']} AND tiempo_extra = '{$tiempoExtra}' AND id_SHE={$she}";
-								$rsD=sqlsrv_query($_SESSION['con'],$queryDupl, $params, $options);
-
-								if(sqlsrv_num_rows($rsD) == 0)
+								while($filaH=sqlsrv_fetch_array($rsH, SQLSRV_FETCH_ASSOC))
 								{
-									$queryI = "INSERT INTO historial_empleado 
-									(id_empleado, id_horario, tiempo_extra, pago, feriado, id_SHE)
-									VALUES
-									({$ids}, {$filaH['id']}, '{$tiempoExtra}', {$pago}, {$feriado}, {$she})";
-									//if($feriado){echo "true";};
-									$stmt=sqlsrv_query($_SESSION['con'],$queryI);
-								}
+									$queryDupl="SELECT * FROM historial_empleado
+												WHERE id_empleado = {$ids} AND id_horario = {$filaH['id']} AND tiempo_extra = '{$tiempoExtra}' AND id_SHE={$she}";
+									$rsD=sqlsrv_query($_SESSION['con'],$queryDupl, $params, $options);
+
+									if(sqlsrv_num_rows($rsD) == 0)
+									{
+										$queryI = "INSERT INTO historial_empleado 
+										(id_empleado, id_horario, tiempo_extra, pago, feriado, id_SHE)
+										VALUES
+										({$ids}, {$filaH['id']}, '{$tiempoExtra}', {$pago}, {$feriado}, {$she})";
+										//if($feriado){echo "true";};
+										$stmt=sqlsrv_query($_SESSION['con'],$queryI);
+									}
+									//APLICAR AQUI EL UPDATE DE HISTORIAL
+								}						
 							}						
 						}
 					}
@@ -566,24 +732,24 @@ class Manejador
 	{
 		$sobrepaso = false;
 		$month = date("m",strtotime($fecha));
-		$query="select * from (select a.id, a.nombre , cedula, e.nombre as departamento,
-				ROUND( SUM( pago ) , 2 )  pago, sueldo *0.30  porciento  
+		$year = date("y",strtotime($fecha));
+		$query="SELECT * from (select a.id, a.nombre , cedula, e.nombre as departamento,
+				ROUND( SUM( pago ) , 2 )  pago, sueldo * 0.30  porciento  
 				from empleado a
 				inner join historial_empleado c on a.id = c.id_empleado
 				inner join horario b on a.id = b.id_empleado and b.id = c.id_horario 
-				AND MONTH( b.fecha ) = '{$month}' 
+				AND MONTH( b.fecha ) = '{$month}' AND YEAR(b.fecha) = '{$year}'
 				AND a.id = {$idE}
 				inner join t_departamento e on e.id = a.departamento 
 				GROUP BY a.cedula,a.id,a.nombre,e.nombre, a.sueldo) x
 				where pago > porciento
-				order by x.nombre
-				";
+				order by x.nombre";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
 		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
 		if($rs)
 		{
-			if(sqlsrv_num_rows($rs)==1)	
+			if(sqlsrv_num_rows($rs)>0)	
 			{
 				$sobrepaso = true;
 			}		
@@ -611,13 +777,15 @@ class Manejador
 		}
 	}
 
-	static function validarSolicitado($idE, $fecha)
+	static function validarSolicitado($idE, $fecha,$return=0)
 	{
 		$flag = false;
+		$usr="";
 		$query="SELECT a.nombre, b.id, b.usr, b.fecha from empleado a
 				inner join solicitudes c on c.id_empleado = a.id
 				inner join solicitudhe b on b.id = c.id_solicitud
-				where a.id={$idE} AND b.fecha = '{$fecha}' ";
+				inner join solicitudes_autorizadas d on d.id_solicitud = b.id 
+				where a.id={$idE} AND b.fecha = '{$fecha}' and d.autorizado =1";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
 		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
@@ -625,10 +793,18 @@ class Manejador
 		{
 			if(sqlsrv_num_rows($rs)>0)	
 			{
+				$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				$usr=$fila['usr'];
 				$flag = true;
 			}		
 		}
-		return $flag;
+		if ($return==1) {
+			return $usr;
+		}
+		else
+		{
+			return $flag;
+		}
 	}
 
 	static function obtenerFechadeFormulario($f)
@@ -659,6 +835,7 @@ class Manejador
 		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
 		{
 			$f = Manejador::obtenerFechadeFormulario($idF);
+			$usr = Manejador::validarSolicitado($fila['id'], $f->format('Y-m-d'),1);
 			if (Manejador::validarPago($fila['id'], $fecha)) 
 			{
 				echo "	<tr class='tab_bg_1'>
@@ -669,12 +846,13 @@ class Manejador
 						</tr>
 					";						
 			}
-			else if(Manejador::validarSolicitado($fila['id'], $f->format('Y-m-d')))
+			else if(!empty($usr))
 			{
+				$tmp=explode("@", $usr);
 				echo "	<tr class='tab_bg_1'>
 							<td> 
 								<input type='checkbox' name='chkEmpleados[]' value='{$fila['id']}' disabled> <p style='color:red;font-weight: 100;'>{$fila['nombre']} - 
-								{$fila['cedula']} - {$fila['departamento']} <b>SOLICITADO </b></p>
+								{$fila['cedula']} - {$fila['departamento']} <b>SOLICITADO {$tmp[0]} </b></p>
 							</td>
 						</tr>
 					";	
@@ -709,6 +887,28 @@ class Manejador
 			else
 			{
 				$f= false;
+			}
+		}
+		return $f;
+	}
+
+	function esFeriadoInt($fecha)
+	{
+		$f=0;
+		$query="SELECT * FROM dias_feriados
+				WHERE fecha = '{$fecha}'";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			if(sqlsrv_num_rows($rs) >0 || $this->esFinDeSemana($fecha)==1)
+			{
+				$f= 1;
+			}
+			else
+			{
+				$f= 0;
 			}
 		}
 		return $f;
@@ -832,6 +1032,25 @@ class Manejador
 		return $n;
 	}
 
+	static function obtenerDepartamentoN($idU)
+	{
+		$n='';
+		$query="SELECT nombre as depto
+				FROM t_departamento
+				WHERE id = {$idU}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if(sqlsrv_num_rows($rs)>0)
+		{
+			while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+			{
+				$n= $fila['depto'];
+			}
+		}	
+		return $n;
+	}
+
 	static function obtenerIdE($cedula)
 	{
 		$id;
@@ -847,6 +1066,244 @@ class Manejador
 			}
 		}	
 		return $id;
+	}
+
+	static function obtenerAcumuladoHE($idE, $fecha)
+	{
+		$month = date("m",strtotime($fecha));
+		$year = date("Y",strtotime($fecha));
+		$query="SELECT ROUND( SUM( pago ) , 2 )  pago
+				from empleado a
+				inner join historial_empleado c on a.id = c.id_empleado
+				inner join horario b on a.id = b.id_empleado and b.id = c.id_horario 
+				inner join solicitudhe she on she.id = c.id_SHE
+				inner join solicitudes s on s.id_solicitud = she.id and a.id = s.id_empleado
+				inner join solicitudes_autorizadas sa on sa.id_solicitud = she.id AND MONTH( b.fecha ) = '{$month}' AND YEAR(b.fecha) = '{$year}' AND a.id = {$idE} and sa.autorizado=1";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			if(sqlsrv_num_rows($rs)>0)	
+			{
+				while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+					return $fila['pago'];
+				}
+			}		
+		}
+	}
+
+	static function esMultidepartamental($idE, $fecha, $detalle=0)
+	{
+		$flag=false;
+		$solicitantes;
+		$retorno;
+		$month = date("m",strtotime($fecha));
+		$year = date("Y",strtotime($fecha));
+		$query="SELECT a.nombre, she.usr, ROUND( SUM( pago ) , 2 )  pago
+				from empleado a
+				inner join historial_empleado c on a.id = c.id_empleado
+				inner join solicitudhe she on she.id = c.id_SHE
+				inner join solicitudes s on s.id_solicitud = she.id and a.id = s.id_empleado
+				inner join solicitudes_autorizadas sa on sa.id_solicitud = she.id 
+				inner join horario b on a.id = b.id_empleado and b.id = c.id_horario 
+				AND MONTH( b.fecha ) = '{$month}' AND YEAR(b.fecha) = '{$year}'
+				AND a.id = {$idE}
+				inner join t_departamento e on e.id = a.departamento
+				where sa.autorizado=1
+				group by she.usr, a.nombre";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			$solicitantes = sqlsrv_num_rows($rs);
+			if ($solicitantes) {
+				if($solicitantes>=2)	
+				{
+					$flag=true;
+				}	
+			}	
+		}
+
+		if ($detalle==1) {
+			$retorno=$solicitantes;
+		}
+		else
+		{
+			$retorno = $flag;
+		}
+
+		return $retorno;
+	}
+
+	static function obtenerPorciento($idE)
+	{
+		$query="SELECT sueldo *0.30  porciento  
+				from empleado 
+				WHERE id={$idE}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			if(sqlsrv_num_rows($rs)>0)	
+			{
+				$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				return $fila['porciento'];			
+			}		
+		}
+	}
+
+	static function obtenerHorario($desde, $hasta, $depto='', $codigo='')
+	{
+		if (!empty($codigo)) {
+			$query="SELECT hor.id horario,emp.id, emp.nombre, emp.codigo_empleado, depto.nombre departamento, hor.fecha, convert(varchar,hor.horadeentrada,108) horadeentrada, convert(varchar,hor.horadesalida,108) horadesalida
+					from empleado emp
+					inner join t_departamento depto on depto.id = emp.departamento
+					inner join horario hor on hor.id_empleado = emp.id
+					where fecha between '{$desde}'  and '{$hasta}' and emp.codigo_empleado={$codigo}
+					order by emp.nombre";
+		}
+		else if (strcmp($depto, 'todos')!=0)
+		{
+			$query="SELECT hor.id horario,emp.id, emp.nombre, emp.codigo_empleado, depto.nombre departamento, hor.fecha, convert(varchar,hor.horadeentrada,108) horadeentrada, convert(varchar,hor.horadesalida,108) horadesalida
+					from empleado emp
+					inner join t_departamento depto on depto.id = emp.departamento
+					inner join horario hor on hor.id_empleado = emp.id
+					where fecha between '{$desde}' and '{$hasta}' and depto.id = {$depto}
+					order by emp.nombre";
+		}
+		else if (strcmp($depto, 'todos')==0)
+		{
+			$query="SELECT hor.id horario,emp.id, emp.nombre, emp.codigo_empleado, depto.nombre departamento, hor.fecha, convert(varchar,hor.horadeentrada,108) horadeentrada, convert(varchar,hor.horadesalida,108) horadesalida
+					from empleado emp
+					inner join t_departamento depto on depto.id = emp.departamento
+					inner join horario hor on hor.id_empleado = emp.id
+					where fecha between '{$desde}' and '{$hasta}'
+					order by emp.nombre";
+		}
+
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			return $rs;
+		}
+		else
+		{
+			return sqlsrv_errors();
+		}
+	}
+
+	static function cambiarHorario($idH, $horadeentrada, $horadesalida)
+	{
+		$flag=false;
+		$anterior = Manejador::getHorario($idH);
+		if (!empty($horadeentrada) && !empty($horadesalida)) 
+		{
+			$query="UPDATE horario set horadeentrada=convert(time,'{$horadeentrada}', 108), horadesalida=convert(time,'{$horadesalida}',108)
+					WHERE id={$idH} ";
+		}
+		else if (!empty($horadeentrada) && empty($horasalida))
+		{
+			$query="UPDATE horario set horadeentrada=convert(time,'{$horadeentrada}', 108)
+					WHERE id={$idH} ";
+		}
+		else if (empty($horaentrada) && !empty($horadesalida))
+		{
+			$query="UPDATE horario set horadesalida=convert(time,'{$horadesalida}',108)
+					WHERE id={$idH} ";
+		}
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			$flag=true;
+			$file_path = $_SERVER['DOCUMENT_ROOT'].'/HorasExtra/archivos/log_omision_punch.log';
+			$data = file_get_contents($file_path);
+			$data.="\r\n". "Se actualizo:" . $idH."\r\n". 
+					"Antes: " .$anterior."\r\n". 
+					"Despues: Entrada: ".$horadeentrada.", Salida: ".$horadesalida."\r\n". 
+					"A las: ".date('Y-m-d H:i:s')."\r\n".
+					"------------------------------"."\r\n";
+			$file_handle = fopen($file_path, 'w');
+			fwrite($file_handle, $data);
+			fclose($file_handle);
+		}
+		return $flag;
+	}
+
+	static function getHorario($idH)
+	{
+		$query="SELECT convert(varchar,horadeentrada, 108) horadeentrada, convert(varchar,horadesalida, 108) horadesalida
+				from horario 
+				WHERE id={$idH}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			if(sqlsrv_num_rows($rs)>0)	
+			{
+				$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				return "Entrada: ".$fila['horadeentrada']."; Salida: ".$fila['horadesalida'];			
+			}		
+		}
+	}
+
+	static function obtenerIdE2($codigo)
+	{
+		$id;
+		$query="SELECT id from empleado where codigo_empleado={$codigo}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if(sqlsrv_num_rows($rs)>0)
+		{
+			while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+			{
+				$id= $fila['id'];
+			}
+		}	
+		return $id;
+	}
+
+	static function ingresarHorario($codigo, $fecha, $entrada, $salida)
+	{
+		$response=0;
+		if (!empty($codigo)) {
+			$id = Manejador::obtenerIdE2($codigo);
+			$query = "SELECT * from horario where id_empleado = {$id} AND fecha= convert(date,'{$fecha}',120)";
+			$params = array();
+			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+			$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+			if(sqlsrv_num_rows($rs)<=0)
+			{
+				$query2 = "INSERT INTO horario (id_empleado, fecha, horadeentrada, horadesalida) VALUES ({$id}, convert(date,'{$fecha}',120), convert(time,'{$entrada}', 108), convert(time,'{$salida}', 108))";
+				sqlsrv_query($_SESSION['con'],$query2, $params, $options);
+				$response=1; 
+			}	
+
+		}
+		return $response;
+	}
+
+	static function obtenerNivelSlc($id)
+	{
+		$query="SELECT nivel FROM empleado where id = {$id}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+			echo "<option value='{$fila['nivel']}' selected>{$fila['nivel']}</option>";
+		}
+		else
+		{
+			echo "<option value='0' selected>0</option>";
+		}
 	}
 }
 ?>

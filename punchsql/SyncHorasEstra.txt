@@ -1,0 +1,97 @@
+/*
+Tablas del servidor HoraExtras
+	Empledo
+	Horario
+Tabla del Servidor Genesys
+	Employee
+	Rawdata
+*//*
+
+Select h.id,r.badge,count(cast(r.date as date)),cast(r.date as date) Fecha , r.time , r.time  from [PROMESEVSAP01].[Genesis].[dbo].[employee] as g
+	inner join horasextra.dbo.empleado as h		
+		on h.cedula = g.user1 
+	inner join [PROMESEVSAP01].[Genesis].[dbo].[rawdata] as r
+		on g.emplnum = r.badge and h.cedula = g.user1 
+	 where g.user1 ='40221949965' 
+	group by h.id,r.badge, r.date,r.time
+Order by date desc
+
+
+
+Select r.badge,count(cast(r.date as date)),cast(r.date as date) Fecha , r.time , r.time  from [PROMESEVSAP01].[Genesis].[dbo].[employee] as g
+	inner join [PROMESEVSAP01].[Genesis].[dbo].[rawdata] as r
+		on g.emplnum = r.badge 
+	 where r.badge like'%703%' 
+	group by r.badge, r.date,r.time
+Order by date desc
+*/
+
+--Declare @Fecha as Table
+--(RowNum INT NOT NULL PRIMARY KEY,
+-- CodigoHoraExtra char(10) NOT NULL,
+-- Cedula char(15) NOT NULL,
+-- CodigoGenesis char(10) NOT NULL,
+-- Fecha datetime NOT NULL
+-- )
+use horasextra
+go
+select * from DatosHorasExtras
+GO
+Delete From DatosHorasExtras
+Go
+INSERT INTO DatosHorasExtras
+	( Id, CodigoHoraExtra, Cedula, CodigoGenesis, Fecha)
+Select ROW_NUMBER() OVER (ORDER BY e.user1) AS Linea,
+	ee.id ,e.user1 , r.badge, 
+	convert(datetime, date) +
+	convert(datetime, substring(time, 1, 2)+ ':' + substring(time, 3, 2)+ ':' + substring(time, 5, 2)) Fecha
+from [PROMESEVSAP01].[Genesis].[dbo].[rawdata] r
+		inner join [PROMESEVSAP01].[Genesis].[dbo].[employee] e
+			on r.badge = e.emplnum
+		inner join [horasextra].[dbo].[empleado] ee
+			on ee.cedula = e.user1
+
+--where badge = '00702'
+--select TOP 1 DATEPART(HH, Fecha) Hora, DATEPART(MI, Fecha) Minutos , DATEPART(SS, Fecha) Segundos , Fecha from @Fecha order by fecha desc
+SELECT DISTINCT CodigoHoraExtra 
+FROM DatosHorasExtras 
+WHERE MONTH(Fecha) = 03
+AND YEAR(Fecha) = 2023
+AND DAY(Fecha) = 11
+--ORDER BY CodigoHoraExtra
+
+SELECT *
+FROM DatosHorasExtras 
+WHERE MONTH(Fecha) = 03
+AND YEAR(Fecha) = 2023
+AND DAY(Fecha) = 11
+--AND CodigoHoraExtra =1633      
+ORDER BY CodigoHoraExtra
+
+
+SELECT  DATEPART(HH,Fecha) as hora, DATEPART(MI,Fecha) as minutos, Fecha as fecha
+		FROM DatosHorasExtras
+		WHERE MONTH(Fecha)=03 AND DAY(Fecha)=11
+		AND YEAR(Fecha)=2023 AND CodigoHoraExtra=1029
+		order by fecha asc
+
+
+--SELECT *
+--FROM ( SELECT top 1 DATEPART(HH,Fecha) as hora, DATEPART(MI,Fecha) as minutos, Fecha as fecha
+--		FROM @Fecha
+--		WHERE MONTH(Fecha)=03 AND DAY(Fecha)=11
+--		AND YEAR(Fecha)=2023 AND CodigoHoraExtra=1029
+--		order by fecha asc
+--UNION
+--		SELECT top 1 DATEPART(HH,Fecha) as hora, DATEPART(MI,Fecha) as minutos, Fecha as fecha
+--		FROM @Fecha
+--		WHERE MONTH(Fecha)=03 AND DAY(Fecha)=11
+--		AND YEAR(Fecha)=2023 AND CodigoHoraExtra=1029
+--		order by fecha asc
+--	 ) E_S 
+
+
+
+
+
+

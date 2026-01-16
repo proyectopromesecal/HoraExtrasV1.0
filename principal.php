@@ -5,6 +5,9 @@ $s = new Seguridad();
 if(!isset($_SESSION)){
 	session_start();
 }
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
 if($s->verificar())
 {
 	//var_dump($_SESSION);
@@ -29,53 +32,67 @@ $total = $aprobadas + $rechazadas + $enviadas + $nuevas;
 <html>
 	<header>
 		<title>Pantalla Principal</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
-		<link rel="stylesheet" href="js/jquery-ui/jquery-ui.css" type="text/css" media="screen">
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-		<script src="js/jquery-2.1.1.js"></script>
-		<script src="js/jquery-ui/jquery-ui.js"></script>
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style type="text/css">
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 60px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+		</style>
 		<script type="text/javascript">
-			$(function() {
-			 	$(document).ready(function(){
-			    	//$( "#dialog" ).dialog();
-			    	//$( "#dialog" ).load('archivos/aviso.html').dialog('open');
-				});
+			$(document).ready(function() {
+				//alert($(window).width() + " " + $(window).height());
 			});
 		</script>
 	</header>
 	<body>
-		<?php include("menu.html");?>
-		<div id="dialog" title="Aviso" style="width:800px;">
-			
+		<header>
+			<?php include('menu.html');?>
+		</header>
+		<div id="contenido">
+			<div class="container-fluid body-content">
+				<div id="dialog" title="Aviso" style="width:800px;"></div>
+				<div class="row">
+					<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+						<fieldset style="width:50%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component vertical-center">
+							<table class="table table-striped ">
+								<thead> 
+									<tr>
+										<th>Solicitudes</th><th>Cantidad</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Nuevas</td><td><?php echo $nuevas;?></td>
+									</tr>
+									<tr>
+										<td>Enviadas y pendientes</td><td><?php echo $enviadas;?></td>
+									</tr>	
+									<tr>
+										<td>Rechazadas</td><td><?php echo $rechazadas;?></td>
+									</tr>	
+									<tr>
+										<td>Aprobadas</td><td><?php echo $aprobadas;?></td>
+									</tr>
+									<tr>
+										<td>Total</td><td><?php echo $total;?></td>
+									</tr>
+								</tbody>
+							</table>					
+						</fieldset>						
+					</div>
+				</div>		
+			</div>
 		</div>
-		<div id='page'>
-			<center></br>
-				<fieldset style="width:70%;border-radius:8px;"><br>
-					<div class='center'>
-						<table class='tab_cadre_fixe'>
-							<tr class='tab_bg_2'>
-								<th>Solicitudes</th><th>Cantidad</th>
-							</tr>	
-							<tr class='tab_bg_2'>
-								<td class="top">Nuevas</td><td><?php echo $nuevas;?></td>
-							</tr>
-							<tr class='tab_bg_2'>
-								<td>Enviadas y pendientes</td><td><?php echo $enviadas;?></td>
-							</tr>	
-							<tr class='tab_bg_2'>
-								<td>Rechazadas</td><td><?php echo $rechazadas;?></td>
-							</tr>	
-							<tr class='tab_bg_2'>
-								<td>Aprobadas</td><td><?php echo $aprobadas;?></td>
-							</tr>
-							<tr class='tab_bg_2'>
-								<td>Total</td><td><?php echo $total;?></td>
-							</tr>
-						</table>					
-					</div>	
-				</fieldset>	
-			</center>
-		</div>
-		<?php include("footer.html");?>
+		<footer>
+			<?php include('footer.html');?>
+		</footer>
 	</body>
 </html>

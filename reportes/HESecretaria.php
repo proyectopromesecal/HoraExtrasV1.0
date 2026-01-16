@@ -89,17 +89,17 @@ class PDF extends FPDF
 	// Pie de página
 	function Footer()
 	{
-		$this->setLeftMargin(45);
-		$this->SetY(-45);
+		$this->setLeftMargin(40);
+		$this->SetY(-40);
 
 		$this->SetFont('Arial','B',8);
-		$this->Cell(25,7, "",1,0);
+		$this->Cell(30,7, "",1,0);
 		$this->Cell(60,7, "Preparado por:",1,0,'C');
 		$this->Cell(65,7, "Aprobado por:",1,0,'C');
 		$this->Cell(60,7, "Revisado por:",1,0,'C');
 		$this->Ln();
 		
-		$this->Cell(25,7, "Firma",1,0);
+		$this->Cell(30,7, "Firma",1,0);
 		$this->SetFont('Arial','',9);
 		$this->Cell(60,7, "",1,0,'C');
 		$this->Cell(65,7, "",1,0,'C');
@@ -107,21 +107,21 @@ class PDF extends FPDF
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',9);
-		$this->Cell(25,7, "Nombre",1,0);
+		$this->Cell(30,7, "Nombre",1,0);
 		$this->Cell(60,7, Manejador::obtenerNombreCompleto($_SESSION['id']),1,0,'C');
 		$this->Cell(65,7, Manejador::obtenerEncargado(Manejador::obtenerIdDpto($_SESSION['dpto'])),1,0,'C');
 		$this->Cell(60,7, "",1,0,'C');
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',8);
-		$this->Cell(25,7, "Rol",1,0);
+		$this->Cell(30,7, "Rol",1,0);
 		$this->Cell(60,7, Manejador::obtenerCargo($_SESSION['id']),1,0,'C');
 		$this->Cell(65,7, "Encargado",1,0,'C');
 		$this->Cell(60,7, "DEPARTAMENTO DE GESTION HUMANA",1,0,'C');
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',9);
-		$this->Cell(25,7, "Fecha",1,0);
+		$this->Cell(30,7, "Fecha",1,0);
 		$this->Cell(60,7, date('Y-m-d H:i:s'),1,0,'C');
 		$this->Cell(65,7, "",1,0,'C');
 		$this->Cell(60,7, "",1,0,'C');
@@ -180,6 +180,7 @@ class PDF extends FPDF
 // Creación del objeto de la clase heredada
 $pdf=new PDF('L', 'mm', 'A4');
 $pdf->AliasNbPages();
+$pdf->setAutoPageBreak(true,50);
 $pdf->AddPage();
 $pdf->SetFont('Times','B',8);
 $pdf->Body($tabla);

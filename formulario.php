@@ -110,7 +110,7 @@
 		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
 	</head>
 	<body class="   ext-webkit ext-chrome">
-		<?php include("menu.html")?>
+		<?php include("menu.html");?>
 		<div id='page'>
 			<center>
 				<div id='form' style="width: 40%">

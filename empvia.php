@@ -1,128 +1,115 @@
 <?php 
-	include('lib/motor.php');
-	
-	if(!isset($_SESSION)){
-		session_start();
-	}
-	$s = new Seguridad();
-	if($s->verificar())
-	{
-		if(strcmp($s->verificarTipo(), "Secretaria") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0 or strcmp($s->verificarTipo(), "Asistente") ==0)
-		{	
-			$empleados;
-		}
-		else
-		{
-			header("Location:index.php");
-		}
+include('lib/motor.php');
+
+if(!isset($_SESSION)){
+	session_start();
+}
+$s = new Seguridad();
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+if($s->verificar())
+{
+	if(strcmp($s->verificarTipo(), "Secretaria") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0 or strcmp($s->verificarTipo(), "Asistente") ==0)
+	{	
+		$empleados;
 	}
 	else
 	{
-		header('Location:Login.php');
+		header("Location:index.php");
 	}
-	
-	if (isset($_GET['f']))
-	{			
-		$_SESSION['form']= $_GET['f'];
-	}
-	else
+}
+else
+{
+	header('Location:Login.php');
+}
+
+if (isset($_GET['f']))
+{			
+	$_SESSION['form']= $_GET['f'];
+}
+else
+{
+	if($_POST)
 	{
-		if($_POST)
+		$seleccionados = array();
+		if(isset($_POST['btnAgregar']))
 		{
-			$seleccionados = array();
-			if(isset($_POST['btnAgregar']))
+			if(isset($_POST['chkEmpleados']))
 			{
-				if(isset($_POST['chkEmpleados']))
+				foreach($_POST["chkEmpleados"] as $valor)
 				{
-					foreach($_POST["chkEmpleados"] as $valor)
-					{
-						$seleccionados[] = $valor;
-					}					
-				}
-				if(count($seleccionados)>0)
-				{
-					ManejadorDietaViatico::agregarEmpleados($_SESSION['form'], $seleccionados);
-				}
-				else
-				{
-					echo "<script>alert('Seleccione un empleado para agregarlo');</script>";	
-				}
+					$seleccionados[] = $valor;
+				}					
 			}
-			else if(isset($_POST['btnEliminar']))
+			if(count($seleccionados)>0)
 			{
-				if(isset($_POST['chkEmpleadosF']))
-				{
-					foreach($_POST["chkEmpleadosF"] as $valor)
-					{
-						$seleccionados[] = $valor;
-					}					
-				}
-				if(count($seleccionados)>0)
-				{
-					ManejadorDietaViatico::eliminarEmpleados($_SESSION['form'], $seleccionados);
-				}
-				else
-				{
-					echo "<script>alert('Seleccione un empleado para Eliminarlo');</script>";	
-				}
+				ManejadorDietaViatico::agregarEmpleados($_SESSION['form'], $seleccionados);
 			}
-			else if (isset($_POST['btnVolver']))
+			else
 			{
-				echo "<script languaje='javascript' type='text/javascript'>window.close();</script>";
+				echo "<script>alert('Seleccione un empleado para agregarlo');</script>";	
 			}
-		}	
-	}
+		}
+		else if(isset($_POST['btnEliminar']))
+		{
+			if(isset($_POST['chkEmpleadosF']))
+			{
+				foreach($_POST["chkEmpleadosF"] as $valor)
+				{
+					$seleccionados[] = $valor;
+				}					
+			}
+			if(count($seleccionados)>0)
+			{
+				ManejadorDietaViatico::eliminarEmpleados($_SESSION['form'], $seleccionados);
+			}
+			else
+			{
+				echo "<script>alert('Seleccione un empleado para Eliminarlo');</script>";	
+			}
+		}
+		else if (isset($_POST['btnVolver']))
+		{
+			echo "<script languaje='javascript' type='text/javascript'>window.close();</script>";
+		}
+	}	
+}
 ?>
 <html>
 	<head>
 		<title>Administrar empleados</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
 		<style type="text/css">
-			#pag
-			{
-			    margin: 25px 25px;
-				-moz-border-radius: 8px;
-				-webkit-border-radius: 8px;
-				border-radius: 8px;
-				-moz-box-shadow: 0px 7px 10px;
-				-webkit-box-shadow: 0px 7px 10px;
-				box-shadow: 0px 7px 10px;
-				padding: 8px 10px 500px 8px;
-				background-image: url(pics/background.png);
-				background-repeat:   repeat-y;
-				background-position: left top;
-				background-size: 100%;
-			}
-			legend
-			{
-				background: #EDE8E8;
-				border: solid 1px black;
-				-webkit-border-radius: 8px;
-				-moz-border-radius: 8px;
-				border-radius: 8px;
-				padding: 6px;
-				font-family:"Lucida Console", Monaco, monospace;
-				font-size:16px;
-				font-weight:bold;
-			}
-			fieldset
-			{
-				-moz-border-radius: 8px;
-				-webkit-border-radius: 8px;
-				border-radius: 8px;
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
 			}
 		</style>
+		<script>
+			$(function() {
+				$('#select_all').click(function() {
+				    var c = this.checked;
+				    $(":checkbox[name = 'chkEmpleados[]']").prop('checked',c);
+				});
+			});
+		</script>
 	</head>
-	<body class="   ext-webkit ext-chrome">
-		<?php include("menu.html");?>
-		<div id='pag'>
-			<form method="post" action="empvia.php">
-				<center>
-					<h3 style="color:black;">Solicitud Dieta y Viaticos</h3>
-					<fieldset style="width:46.5%; float:right; ">
-						<legend style="color:black; font-weight:bold;">Empleados Del Formulario</legend>
+	<body>
+		<div id='contenido'>
+			<div class="container-fluid body-content">
+				<form method="post" action="empvia.php">
+					<fieldset style="width:46.5%; float:right;border-radius:8px;border: 3px solid" class="well bs-component">
+						<legend>En este Formulario</legend>
 						<div style="overflow: auto; width: 100%; height: 40%;">
-							<table style='border-collapse: collapse;width: 100%;' border class='tab_cadre_fixe'>
+							<table style='width: 100%;' class="table table-bordered table-striped table-hover" border>
 								<?php 
 									$rs =ManejadorDietaViatico::obtenerEmpleados($_SESSION['form'] );
 									if(!$rs)
@@ -133,7 +120,7 @@
 									{
 										while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
 										{
-											echo "	<tr class='tab_bg_1'>
+											echo "	<tr>
 														<td> 
 															<input type='checkbox' name='chkEmpleadosF[]' value='{$fila['id']}' <b>{$fila['nombre']}</b> - 
 															{$fila['cedula']} - {$fila['cargo']}
@@ -145,56 +132,26 @@
 								?>
 							</table>
 						</div></br>
-						<input align="right" type="submit" name="btnEliminar" value="Eliminar" class='submit'></input>
-						<input type="submit" name="btnVolver" value="Salir" class='submit'></input>	
-					</fieldset>
-					
-					<fieldset style="width:48%; float:left;">
-						<legend style="color:black;font-weight:bold;">Empleados Existentes</legend>
-						<div style="overflow: auto; width: 100%; height: 40%;">
-							<table style='border-collapse: collapse;width: 100%;' border class='tab_cadre_fixe'>
+						<input align="right" type="submit" name="btnEliminar" value="Eliminar" class='btn btn-danger btn-block'></input>
+						<input type="submit" name="btnVolver" value="Guardar y Salir" class='btn btn-primary btn-block'></input>
+					</fieldset>		
+
+					<fieldset style="width:46%; float:left;border-radius:8px;border: 3px solid" class="well bs-component">
+						<legend>Empleados Existentes</legend>
+						<div style="overflow: auto; width: 100%; height: 50%;" id="empDisponibles">
+							<input type='checkbox' name='chkSlc' id="select_all" style='float:left;'><b style='float:left;'>TODO</b>
+							<br>
+							<table style='width: 100%;' border class="table table-bordered table-striped table-hover" border name="tblDisp">
 								<?php 
-									$rs;
-									$rs=Manejador::obtenerEmpleados();
-									if(!$rs)
-									{
-										echo "Hubo un problema al cargar los empleados de la base de datos.";
-									}
-									else
-									{
-										while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-										{
-											echo "	<tr class='tab_bg_1'>
-														<td> 
-															<input type='checkbox' name='chkEmpleados[]' value='{$fila['id']}' <b>{$fila['nombre']}</b> - 
-															{$fila['cedula']} - {$fila['departamento']}
-														</td>
-													</tr>
-												";
-										}
-									}
+									ManejadorDietaViatico::obtenerEmpleadosDisponiblesDV();
 								?>
 							</table>
 						</div></br>
-						<input align="right" type="submit" name="btnAgregar" value="Agregar" class='submit'></input>			
+						<button align="right" type="submit" name="btnAgregar" class='btn btn-primary btn-block' >Agregar</button>				
 					</fieldset>			
-				</center>
-			</form>	
+				</form>	
+			</div>
 		</div>
-		<div id='footer'>
-			<table width='100%'>
-				<tr>
-					<td class='left'>
-						<span class='copyright'><a href='http://promesecal.gob.do/'>PROMESE CAL</a></span>
-					</td>
-					<td class='copyright'>
-						<span class='copyright'>Version actual: 0.14</span>
-					</td>
-					<td class='right'>
-						<span class='copyright'>SCHE  0.14 Copyright (C) 2013 by NiosX PromeseCal.</span>
-					</td>
-				</tr>
-			</table>
-		</div>
+		<?php include('footer.html');?>
 	</body>
 </html>

@@ -2,32 +2,6 @@
 require('../fpdf/fpdf.php');
 include('../lib/motor.php');
 
-global $tabla;
-$params = array();
-$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-if(isset($_GET['f']))
-{
-	$query="SELECT empleado.nombre as nombre, cedula, t_cargo.nombre as cargo, t_departamento.nombre as departamento, convert(varchar, fecha,  103 ) AS fecha, convert(varchar, horadeentrada,  108 ) AS horadeentrada, convert(varchar, horadesalida,  108 ) AS horadesalida
-			FROM empleado, horario, t_cargo, t_departamento
-			WHERE fecha = '{$_GET['f']}'
-			AND empleado.id = horario.id_empleado
-			AND t_cargo.id = empleado.cargo
-			AND t_departamento.id = empleado.departamento
-			order by departamento";
-	$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
-	if($rs)
-	{
-		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-		{
-			$tabla[]=$fila['nombre'].";".$fila['departamento'].";".$fila['fecha'].";".$fila['horadeentrada'].";".$fila['horadesalida'];			
-		}
-	}
-}
-else
-{
-	header('Location:generadorReportes.php');
-}
-
 class PDF extends FPDF
 {
 	// Cabecera de página
@@ -35,13 +9,13 @@ class PDF extends FPDF
 	{
 		// Logo
 		$this->Image('../imagenes/logo-promosecal.png',12,11,50, 20);
-		$this->Image('../imagenes/farmacia-logo.png',150,10,50,20);
+		$this->Image('../imagenes/farmacia-logo.png',235,10,50,20);
 		// Arial bold 15
 		$this->SetFont('Arial','B',14);
 		$this->Ln(20);
 		// Movernos a la derecha
 		// Título
-		$this->Cell(190, 15, "Reporte de Entrada y Salida",0,0, 'C');
+		$this->Cell(275, 15, "Reporte de Entrada y Salida",0,0, 'C');
 		// Salto de línea
 		$this->Ln(20);
 	}
@@ -59,41 +33,51 @@ class PDF extends FPDF
 	
 	function Body($tabla)
 	{
-		$this->setLeftMargin(10);
+		$this->setLeftMargin(12);
 		//tabla
 		if(!empty($tabla))
 		{			
 			$this->SetFillColor(255,0,0);
 			$this->SetDrawColor(0);
 			$this->SetLineWidth(.3);
-			$this->SetFont('Times','B',11);
+			$this->SetFont('Times','B',12);
 			$w = array
-			(0 => 62,
-			 1 => 80,
-			 2 => 15,
-			 3 => 15,
-			 4 => 15);
+			(0 => 90,
+			 1 => 20,
+			 2 => 100,
+			 3 => 20,
+			 4 => 20,
+			 5 => 20);
 			 
-			$header= array('Nombre', 'Departamento', 'Fecha', 'Entrada', 'Salida');
+			$header= array('Nombre', 'Codigo','Departamento', 'Fecha', 'Entrada', 'Salida');
 			for($i=0;$i<count($header);$i++)
 			{
 				$this->Cell($w[$i],10,$header[$i],1,0,'C');
 			}
 			$this->Ln();
-			$this->SetFont('Times','B',6);
+			$this->SetFont('Times','',10);
 			$this->SetFillColor(224,235,255);
-			$this->SetTextColor(0);
-			$this->SetFont('');
 			// Datos
 			foreach($tabla as $row)
 			{
+				
 				$columna = explode(";",$row); //separar los datos en posiciones de arreglo 
-				$this->Cell($w[0],6,$columna[0],1,0,'C');
+				
+				if($columna[5] == $columna[6]){
+					
+					$columna[1] .=  "*";
+				}
+				
+				$this->Cell($w[0],6,utf8_decode($columna[0]),1,0,'C');
 				$this->Cell($w[1],6,$columna[1],1,0,'C');
-				$this->Cell($w[2],6,$columna[2],1,0,'C');
-				$this->Cell($w[3],6,$columna[3],1,0,'C');
-				$this->Cell($w[4],6,$columna[4],1,0,'C');			
+				$this->SetFont('Times','',7);
+				$this->Cell($w[2],6,utf8_decode($columna[3]),1,0,'C');
+				$this->SetFont('Times','',10);
+				$this->Cell($w[3],6,$columna[4],1,0,'C');
+				$this->Cell($w[4],6,$columna[5],1,0,'C');
+				$this->Cell($w[5],6,$columna[6],1,0,'C');			
 				$this->Ln();
+				
 			}
 			$this->Cell(array_sum($w),0,'','T');
 		}
@@ -104,10 +88,10 @@ class PDF extends FPDF
 	}
 }
 // Creación del objeto de la clase heredada
-$pdf=new PDF('P', 'mm', 'A4');
+$pdf=new PDF('L', 'mm', 'A4');
 $pdf->AliasNbPages();
 $pdf->AddPage();
 $pdf->SetFont('Times','B',12);
-$pdf->Body($tabla);
+$pdf->Body($_SESSION['datos']);
 $pdf->Output();
 ?>

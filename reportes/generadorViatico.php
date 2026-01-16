@@ -7,9 +7,21 @@ if(!isset($_SESSION)){
 $s = new Seguridad();
 $params = array();
 $options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+
 if($s->verificar())
 {
-	if(strcmp($s->verificarTipo(), "Viewer") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0)
+	$f=0;
+	foreach ($_SESSION['permisos'] as $value) {
+		if ($value == 'Viewer' || $value == 'SuperAdmin') {
+			$f=1;
+		}
+	}
+
+	if($f)
 	{	
 		$_SESSION['rutaActual']="Reportes > Dieta y Viaticos";
 	}
@@ -126,101 +138,139 @@ if($_POST)
 		}	
 	}
 	//echo $concatenacion;
-
 }
 ?>
 
 <html>
 	<head>
 		<title>Reportes Dieta y Viaticos</title>
-		<style type='text/css'>
-		#txt
-		{
-			border-width:0;
-			background:F6F8F9;
-		}
-		</style> 
-		<link rel="stylesheet" href="../css/styles.css" type="text/css" media="screen">
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-		<script src="../css/jquery-2.0.3.min.js"></script>
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style>
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+		</style>
 	</head>
 	<body>
 		<?php include("../menu.html");?>
-		<div id='page'>
-			<form method='post' action='generadorViatico.php'>
-				<div id='tabcontent' style='width:100%'>
-					<div id='ext-gen91' class='x-panel-bwrap'>	
-						<table width='100%' border class='tab_cadre_pager'>
-							<tr>
-								<td class="tab_bg_2 b" align='center' colspan=2><label>Filtrar por Departamento: </label><select style="width: 230px;" name='slcDepartamento'><?php Manejador::obtenerDepartamentos();?></select></td>
-								<td class="tab_bg_2 b" align='center'><label>Filtrar por Fecha de Creacion: </label><input type="date" name="slcFecha" value=''></input></td>
-								<td class="tab_bg_2 b" align='center'>Filtrar por Solicitud: <select name="slcSolicitudes"><?php ManejadorDietaViatico::obtenerFormulariosSlc();?></select></td>
-							</tr>	
-							<tr>
-								<td class="tab_bg_2 b" align='center' colspan=2><label>Filtrar por Mes: </label><input type="month" name="slcMes" value=''></input></td>
-								<td class="tab_bg_2 b" align='center'><label>Filtrar por Empleado: </label><input type="text" name="txtEmpleado" value='Cedula Num' onclick="if(this.value=='Cedula Num') this.value=''" onblur="if(this.value=='') this.value='Cedula Num' " maxlength='11'></input></td>	
-								<td class="tab_bg_2 b" align='center'><label>Ordenar por: </label><select name='slcOrdenar' style='width: 100;'><?php Manejador::obtenerOrdenamientosViaticos();?></select></td>								
-							</tr>															
-							<tr>
-								<td class="tab_bg_2 b" align='center' colspan=2><label>Titulo del Reporte: </label><input type='text' name='txtTitulo' style="width:300;" placeholder="Ej: Reporte de Dieta y Viaticos"></input></td>
-								<td class="tab_bg_2 b" align='center'><input type='submit' name='btnBuscar' value='Buscar resultados'></td>
-								<td class="tab_bg_2 b" align='center'><input type='submit' name='btnReporte' value='Crear Reporte'></input></td>
-							</tr>
-						</table>
-					</div>
-					<br>
-					<div class='center' style="overflow: auto; height:60%;">	
-						<table style="width:100%;" border='1' class='tab_cadre_fixe'>
-							<th>Nombre</th> <th width="9%">Cedula</th><th>Cargo</th><th>Departamento</th>
-							<th width="8%">No. Solicitud</th><th width="9%">Fecha de Salida</th>
-							<th width="8%">Fecha de Entrada</th><th width="8%">Hora de Salida</th>
-							<th width="8%">Hora de Entrada</th>
-							<?php 
-								if(isset($_SESSION['rs']))
-								{
-									$rs = $_SESSION['rs'];
-									if($rs)
-									{
-										if(sqlsrv_num_rows($rs)<=0)
-										{
-											echo "<script language='javascript'>
-											alert('No hay resultados que coincidan con su criterio de busqueda.');
-											</script>";
-										}
-										else
-										{
-											while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-											{		
-												$datos[] = $fila['nombre'].";".$fila['cedula'].";".$fila['cargo'].";".$fila['departamento'].";".$fila['solicitud'].";".$fila['fecha_entrada']->format('d/m/Y').";".$fila['fecha_salida']->format('d/m/Y').";".$fila['hora_entrada'].";".$fila['hora_salida'];								
-												echo "<tr class='tab_bg_2'>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtNombre' value='{$fila['nombre']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtCedula' value='{$fila['cedula']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtCargo' value='{$fila['cargo']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtDepartamento' value='{$fila['departamento']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtSolicitud' value='{$fila['solicitud']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtFechaEntrada' value='{$fila['fecha_entrada']->format('d/m/Y')}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtFechaSalida' value='{$fila['fecha_salida']->format('d/m/Y')} ' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtHoraEntrada' value='{$fila['hora_entrada']}' readonly></input></td>
-															<td><input id='txt' style='width: 100%;' type='text' name='txtHoraSalida' value='{$fila['hora_salida']}' readonly></input></td>
-													 </tr>";
+		<div id='contenido'>
+			<div class="container-fluid body-content">
+				<form method='post' action='generadorViatico.php'>
+					<fieldset style="width:90%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+						<div class="row">	
+							<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+								<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+									<div class="form-group">
+										<label>Filtrar por Departamento: </label>
+										<select class="form-control" name='slcDepartamento'><?php Manejador::obtenerDepartamentos();?></select>
+									</div>
+									<div class="form-group">
+										<label>Filtrar por Mes: </label>
+										<input type="month" name="slcMes" value='' class="form-control"></input>
+									</div>
+									<div class="form-group">
+										<label>Titulo del Reporte: </label>
+										<input type='text' name='txtTitulo' class="form-control" placeholder="Ej: Reporte de Viaticos 2016">
+									</div>
+								</div>
+								<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+									<div class="form-group">
+										<label>Filtrar por Fecha de Creaci&oacute;n: </label>
+										<input type="date" name="slcFecha" value='' class="form-control" >
+									</div>
+									<div class="form-group">
+										<label>Filtrar por Empleado: </label>
+										<input type="text" name="txtEmpleado" class="form-control" value='Cedula Num' onclick="if(this.value=='Cedula Num') this.value=''" onblur="if(this.value=='') this.value='Cedula Num' " maxlength='11'>
+									</div>
+									<div class="form-group">
+										<input type='submit' name='btnBuscar' value='Buscar resultados' class="btn btn-primary btn-block">
+									</div>
+								</div>
+								<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+									<div class="form-group">
+										<label>Filtrar por Solicitud: </label><br>
+										<select name="slcSolicitudes" class="form-control"><?php ManejadorDietaViatico::obtenerFormulariosSlc();?></select>
+									</div>
+									<div class="form-group">
+										<label>Ordenar por: </label>
+										<select name='slcOrdenar' class="form-control"><?php Manejador::obtenerOrdenamientosViaticos();?></select>
+									</div>
+									<div class="form-group">
+										<button class="btn btn-default6 btn-block" type='submit' name='btnReporte' value=''>Crear Reporte</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<br>
+						<div class="row">
+							<div style="overflow: auto; height:60%;width: 100%;">
+								<table class="table table-hover table-striped">
+									<thead>
+										<tr>
+											<th>Nombre</th> <th>Cedula</th><th>Cargo</th><th>Departamento</th>
+											<th >No. Solicitud</th><th >Fecha de Salida</th>
+											<th >Fecha de Entrada</th><th>Hora de Salida</th>
+											<th >Hora de Entrada</th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php 
+											if(isset($_SESSION['rs']))
+											{
+												$rs = $_SESSION['rs'];
+												if($rs)
+												{
+													if(sqlsrv_num_rows($rs)<=0)
+													{
+														echo "<script language='javascript'>
+														alert('No hay resultados que coincidan con su criterio de busqueda.');
+														</script>";
+													}
+													else
+													{
+														while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+														{		
+															$datos[] = $fila['nombre'].";".$fila['cedula'].";".$fila['cargo'].";".$fila['departamento'].";".$fila['solicitud'].";".$fila['fecha_entrada']->format('d/m/Y').";".$fila['fecha_salida']->format('d/m/Y').";".$fila['hora_entrada'].";".$fila['hora_salida'];								
+															echo "<tr>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtNombre' value='{$fila['nombre']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtCedula' value='{$fila['cedula']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtCargo' value='{$fila['cargo']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtDepartamento' value='{$fila['departamento']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtSolicitud' value='{$fila['solicitud']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtFechaEntrada' value='{$fila['fecha_entrada']->format('d/m/Y')}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtFechaSalida' value='{$fila['fecha_salida']->format('d/m/Y')} ' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtHoraEntrada' value='{$fila['hora_entrada']}' readonly></input></td>
+																		<td><input id='txt' style='width: 100%;' type='text' name='txtHoraSalida' value='{$fila['hora_salida']}' readonly></input></td>
+																 </tr>";
+														}
+														$_SESSION['datos'] = $datos; 	
+													}
+												}
+												else
+												{
+													//echo "Hubo un error con la base de datos";
+												}
 											}
-											$_SESSION['datos'] = $datos; 	
-										}
-									}
-									else
-									{
-										//echo "Hubo un error con la base de datos";
-									}
-								}
-								else
-								{
-									//echo "No hay rs en sesion";
-								}						
-							?>
-						</table>		
-					</div>				
-				</div>
-			</form>			
+											else
+											{
+												//echo "No hay rs en sesion";
+											}						
+										?>									
+									</tbody>
+								</table>	
+							</div>	
+						</div>				
+					</fieldset>
+				</form>	
+			</div>		
 		</div>
 		<?php include("../footer.html");?>
 	</body>

@@ -1,42 +1,64 @@
+﻿<?php
+include("lib/motor.php");
+if(!isset($_SESSION)){
+	session_start();
+}
+
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+?>
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<title>Login</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style>
+			#contenido{
+				position: fixed;
+				top :100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+			#login-box{
+				background: url("/pics/loginhe.png") no-repeat;
+				background-size: 100% 100%;
+			}
+			.form-group input{
+				width: 50%;
+			}
+		</style>
 	</head>
 	<body>
-		<div id="contenulogin">
-			<div id="logo-login"></div>
-			<div id="boxlogin">
-				<form method="post" action="lib/Clases/comprobar.php" name="login-form" class="login-form">
-					<fieldset>
-						<legend>Identificacion</legend>
-						<div class='row'>
-							<span class='label'>
-								<label>Usuario:</label>
-							</span>
-							<span class='formw'>
-								<input type="text" name ="txtUsuario" id="login_name" size="20" >
-							</span>
-						</div>
-						
-						</br>
-						
-						<div class='row'>
-							<span class='label'>
-								<label>Contrase�a:</label>
-							</span>
-							<span class='formw'>
-								<input type="password" name ="txtClave" id="login_password" size="20">
-							</span></br></br>
-							<span style="float: right;">
-								<input type="submit" name="btnGuardar" value="Entrar" class="submit">
-							</span>
-						</div>
 
-					</fieldset>
-				</form>	
+		<div id="contenido">
+			<div class="container-fluid body-content">	
+				<fieldset id="login-box" style="width:50%;float:none; margin: 0 auto;" class="well bs-component">
+					<form method="post" action="lib/Clases/comprobar.php" name="login-form">
+						<br><br>
+						<div class='row'>
+							<div class="form-group">
+								<label>Usuario:</label>
+								<input type="text" name ="txtUsuario" class="form-control" placeholder="Nombre de usuario">
+							</div>
+						</div>					
+						<div class='row'>
+							<div class="form-group">
+								<label>Contraseña:</label>
+								<input type="password" name ="txtClave" class="form-control" placeholder="Clave">
+							</div>
+						</div>
+						<input type="submit" name="btnGuardar" value="Entrar" class="btn btn-primary ">
+					</form>
+				</fieldset>
 			</div>	
-		</div>		
+		</div>
+
+		<?php include("footer.html");?>	
+
+	
 	</body>
 </html>

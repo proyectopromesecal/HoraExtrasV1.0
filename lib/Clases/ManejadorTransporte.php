@@ -24,23 +24,103 @@ class ManejadorTransporte
 	{
 		foreach($arrayE as $valor)
 		{
+			//buscar si tiene registros previos
 			$queryD="SELECT *
 					FROM pago_transporte
 					WHERE id_empleado = {$valor} AND id_formulario_transporte = {$idS}";
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
 			$rsD = sqlsrv_query($_SESSION['con'], $queryD, $params, $options);
-			
+			$query="";
 			if($rsD)
 			{
-				if(sqlsrv_num_rows($rsD)==0)
-				{
-					$query = "INSERT INTO pago_transporte
-					(id_empleado, id_formulario_transporte, pago)
-					VALUES
-					({$valor},{$idS}, ".Pago_Transporte .")";
-					$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);					
+				$filaD=sqlsrv_fetch_array($rsD, SQLSRV_FETCH_ASSOC);
+				//si es empleado con  horario especial
+				if ($_SESSION['m']->empleadoEspecial($valor) ) {
+					$query2 = " SELECT e.id,
+								case 
+								when h.horadeentrada between '00:00:00' and '07:00:00' and h.horadesalida > '16:59:59' and  dbo.validarNoLaboral(tr.fecha) = 0 then '400' 
+								when  h.horadeentrada between '00:00:00' and '07:00:00'  and  dbo.validarNoLaboral(tr.fecha) = 0 or h.horadesalida > '16:59:59' and  dbo.validarNoLaboral(tr.fecha) = 0  then '200'
+								when dbo.validarNoLaboral(tr.fecha) = 1 then '200'
+								when h.horadesalida < '16:59:59' and h.horadeentrada >'07:00:00' then '0'  end pago 
+								from horario h
+								inner join empleado e on h.id_empleado = e.id
+								inner join formulario_transporte tr on tr.fecha = h.fecha
+								where e.horario_especial =1 and tr.id = {$idS} and e.id = {$valor}";
+					$rs2 = sqlsrv_query($_SESSION['con'], $query2, $params, $options);	
+					if ($rs2) {
+						$pago=0;
+						if (sqlsrv_num_rows($rs2)>=1) {
+							$fila=sqlsrv_fetch_array($rs2, SQLSRV_FETCH_ASSOC);
+							$pago = $fila['pago'];
+
+							if(sqlsrv_num_rows($rsD)==0)
+							{
+								if ($pago!=0) {
+									$query = "INSERT INTO pago_transporte
+									(id_empleado, id_formulario_transporte, pago)
+									VALUES
+									({$valor},{$idS}, {$pago})";									
+								}
+							}
+							else 
+							{
+								if ($pago!=$filaD['pago']) {
+									$query = "UPDATE pago_transporte SET pago = {$pago} where id={$filaD['id']}";								
+								}
+							}
+						}
+					}	
 				}
+				else
+				{
+					$query2 = " SELECT case when horadesalida > case when dbo.validarNoLaboral(tr.fecha) = 1 then '01:00:00' else '16:59:59' end then '200' else '0' end pago 
+								from horario h
+								inner join formulario_transporte tr on tr.fecha = h.fecha
+								inner join empleado e on e.id = h.id_empleado
+								where tr.id = {$idS} and e.id = {$valor}";
+					$rs2 = sqlsrv_query($_SESSION['con'], $query2, $params, $options);	
+					if ($rs2) {
+						if (sqlsrv_num_rows($rs2)>=1) {
+							$fila=sqlsrv_fetch_array($rs2, SQLSRV_FETCH_ASSOC);
+							if(sqlsrv_num_rows($rsD)==0)
+							{
+								if ($fila['pago']==200) {
+									$query = "INSERT INTO pago_transporte
+											(id_empleado, id_formulario_transporte, pago)
+										 	VALUES
+										 	({$valor},{$idS}, ".Pago_Transporte.")";									
+								}				
+							}
+							else
+							{
+								if ($filaD['pago']!= $fila['pago']) {
+									$query = "UPDATE pago_transporte SET pago = {$fila['pago']} where id={$filaD['id']}";	
+								}
+							}
+
+						}
+					}
+					else
+					{
+						
+						if( ($errors = sqlsrv_errors() ) != null) {
+					        foreach( $errors as $error ) {
+					            echo "SQLSTATE: ".$error[ 'SQLSTATE']."<br />";
+					            echo "code: ".$error[ 'code']."<br />";
+					            echo "message: ".$error[ 'message']."<br />";
+					        }
+					    }
+					    
+					}
+				}	
+				if (!empty($query)) {
+					$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);	
+				}
+			}
+			else
+			{
+				//echo "";
 			}
 		}
 	}
@@ -405,6 +485,7 @@ class ManejadorTransporte
 			while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
 				$queryV="SELECT h.id from historial_empleado h
 				inner join solicitudhe s on s.id = h.id_she
+				inner join horario hor on hor.id = h.id_horario
 				WHERE s.id ={$fila['id']}";
 				$rsV=sqlsrv_query($_SESSION['con'], $queryV, $params, $options);
 				if(sqlsrv_num_rows($rsV)<=0){

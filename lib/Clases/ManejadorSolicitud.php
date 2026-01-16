@@ -37,11 +37,11 @@
 			$query="";
 			if(empty($departamento))
 			{
-				$query="SELECT * from solicitudHE";
+				$query="SELECT top 40 * from solicitudHE ";
 			}
 			else
 			{
-				$query="SELECT *
+				$query="SELECT top 40 *
 						FROM solicitudHE
 						WHERE usr='{$usuario}'";
 			}
@@ -79,10 +79,11 @@
 					AND t_cargo.id = empleado.cargo
 					AND t_departamento.id = empleado.departamento
 					AND solicitudHE.id = solicitudes.id_solicitud
-					AND solicitudHE.id = {$idS}";
+					AND solicitudHE.id = {$idS}
+					ORDER BY empleado.nombre";
 			$params = array();
 			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
-			$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);($query);
+			$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
 			return $rs;
 		}
 		
@@ -257,7 +258,7 @@
 		{
 			if(empty($departamento)|| strcmp($departamento,"todos")==0)
 			{
-				$query="SELECT solicitudhe.fecha_creacion as fecha_creacion, solicitudhe.fecha as fecha, solicitudhe.id as id, solicitudhe.noOficio as noOficioHE
+				$query="SELECT TOP 35 solicitudhe.fecha_creacion as fecha_creacion, solicitudhe.fecha as fecha, solicitudhe.id as id, solicitudhe.noOficio as noOficioHE
 						FROM solicitudhe, solicitudes_autorizadas
 						WHERE NOT EXISTS
 						(SELECT 1 FROM horasextra_pagadas WHERE id_solicitud = solicitudhe.id)
@@ -267,7 +268,7 @@
 			}
 			else
 			{
-				$query="SELECT solicitudhe.fecha_creacion as fecha_creacion, solicitudhe.fecha as fecha, solicitudhe.id as id, solicitudhe.noOficio as noOficioHE
+				$query="SELECT TOP 35 solicitudhe.fecha_creacion as fecha_creacion, solicitudhe.fecha as fecha, solicitudhe.id as id, solicitudhe.noOficio as noOficioHE
 						FROM solicitudhe, solicitudes_autorizadas
 						WHERE NOT EXISTS
 						(SELECT 1 FROM horasextra_pagadas WHERE id_solicitud = solicitudhe.id)
@@ -333,7 +334,7 @@
 			{
 				$query="SELECT COUNT( solicitudhe.id ) AS Cantidad
 						FROM solicitudhe, solicitudes_autorizadas
-						WHERE solici tudhe.id = solicitudes_autorizadas.id_solicitud
+						WHERE solicitudhe.id = solicitudes_autorizadas.id_solicitud
 						AND tipo =  'HoraExtra'
 						AND autorizado =1";				
 			}
@@ -515,7 +516,7 @@
 			}
 		}
 
-		static function obtenerTotalHoras($idE, $fechai, $fechaf, $f)
+		static function obtenerTotalHoras($idE, $fechai, $fechaf, $f, $idUsr)
 		{
 			$horas="";
 			$params = array();
@@ -527,6 +528,7 @@
 						,{$f}
 						,'{$fechai}'
 						,'{$fechaf}'
+						,{$idUsr}
 					)";
 			$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
 			if($rs)
@@ -544,6 +546,65 @@
 				}
 			}
 			return $horas;
+		}
+
+		static function reestablecerNumO()
+		{
+			$query = "SELECT * from solicitudhe";
+			$params = array();
+			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+			$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
+			if ($rs) {
+				while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+					$temp = explode("-", $fila['noOficio']);
+					if ($fila['id'] != $temp[1]) {
+						$nuevoNoOficio = $temp[0]."-".$fila['id'];
+						$query2="UPDATE solicitudhe set noOficio='{$nuevoNoOficio}' WHERE id={$fila['id']}";
+						sqlsrv_query($_SESSION['con'], $query2, $params, $options);
+					}
+				}
+			}
+		}
+
+		static function obtenerHistSolicitud($usr, $idS)
+		{
+			$data="";
+			$query = "SELECT count(hist.id_empleado) guardados, sum(hist.pago) monto_guardado from solicitudhe she
+						inner join solicitudes s on s.id_solicitud = she.id
+						inner join empleado e on e.id = s.id_empleado
+						inner join horario h on h.id_empleado = e.id and h.fecha = she.fecha
+						inner join historial_empleado hist on hist.id_SHE = she.id and hist.id_empleado = e.id and hist.id_horario = h.id
+						where she.usr='{$usr}'
+						and she.id={$idS}";
+			$params = array();
+			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+			$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
+			if ($rs) {
+				if (sqlsrv_num_rows($rs)>0) {
+					while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+						$data.=$fila['guardados'].";".$fila['monto_guardado'];
+					}
+				}
+			}
+			return $data;
+		}
+
+		static function obtenerFechaSolicitud($idS)
+		{
+			$temp="";
+			$query = "SELECT fecha
+						FROM solicitudhe 
+						WHERE id={$idS}";
+			$params = array();
+			$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+			$rs = sqlsrv_query($_SESSION['con'], $query, $params, $options);
+			if ($rs) {
+				if (sqlsrv_num_rows($rs)>0) {
+					$fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+					$temp=$fila['fecha'];	
+				}
+			}
+			return $temp;
 		}
 	}
 ?>

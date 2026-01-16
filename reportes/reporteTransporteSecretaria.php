@@ -23,6 +23,8 @@ if($_POST)
 {
 	if(isset($_POST['btnReporte']))
 	{
+		echo "<script>window.open('transporteSemanalSecretaria.php?fi={$_POST['fechaInicio']}&ff={$_POST['fechaFinal']}');</script>";
+		/*
 		$text=ManejadorTransporte::validarHorasExtra($_POST['fechaInicio'], $_POST['fechaFinal'], $_SESSION['usuario']);
 		if(empty($text))
 		{
@@ -32,6 +34,7 @@ if($_POST)
 		{
 			echo "<script>alert('No puedes continuar. {$text}');</script>";
 		}
+		*/
 		
 		//header("Location:transporteSemanalSecretaria.php?fi={$_POST['fechaInicio']}&ff={$_POST['fechaFinal']}");
 	}

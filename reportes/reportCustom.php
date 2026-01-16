@@ -70,7 +70,7 @@ class PDF extends FPDF
 		 5 => 15, 
 		 6 => 15,
 		 7 => 15,
-		 8 => 20,);
+		 8 => 20);
 		// Cabeceras
 		for($i=0;$i<count($header);$i++)
 		{
@@ -86,7 +86,7 @@ class PDF extends FPDF
 			$columna = explode(";",$row); //separar los datos en posiciones de arreglo 
 			if($row == end($data))
 			{
-				$this->Cell(230,6,"Total",'LR');
+				$this->Cell(262,6,"Total",'LR');
 				$this->Cell(20,6,$columna[0],1,0,'C');	
 			}
 			else

@@ -1,0 +1,23 @@
+html body { 
+
+}
+footer {
+    cursor: help;
+    color: #989788;
+}
+th {
+
+} 
+legend{
+    display: block;
+    padding-left: 2px;
+    padding-right: 2px;
+    border: none;
+    width: auto ;
+}
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+.table-hover > tbody > tr:hover {
+  background-color: #D2D2D2;

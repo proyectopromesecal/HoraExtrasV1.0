@@ -49,16 +49,20 @@ class ManejadorCargo
 		}
 	}
 	
-	static function obtenerCargo($idC)
+	static function obtenerCargo($idC=0)
 	{
 		$query="SELECT id, nombre
 				FROM t_cargo
-				WHERE t_cargo.id ={$idC}";
+				ORDER BY nombre";
 		$rs = sqlsrv_query($_SESSION['con'],$query);
 		if($rs)
 		{
-			$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
-			echo "<option value='{$fila['id']}'>{$fila['nombre']}</option>";
+			while($fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)){
+				if ($idC==$fila['id']) {
+					echo "<option selected value='{$fila['id']}'>{$fila['nombre']}</option>";
+				}
+				echo "<option value='{$fila['id']}'>{$fila['nombre']}</option>";
+			}
 		}
 	}
 	

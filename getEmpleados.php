@@ -7,7 +7,7 @@
 		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
 		{
 			echo "
-			<tr class='tab_bg_2'>
+			<tr>
 				<td align='center'><input type='checkbox' name='check[]' value='{$fila['id']}' readonly></input></td>
 				<td>{$fila['cedula']}</td>
 				<td>{$fila['nombre']}</td>

@@ -9,9 +9,22 @@ $total;$tb;
 $params = array();
 $options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 
-if(isset($_SESSION['idS']))
+global $she_id;
+global $she_usr;
+
+if (isset($_GET['s']) && isset($_GET['usr'])) {
+	$she_id= $_GET['s'];
+	$she_usr=$_GET['usr'];
+	$_SESSION['idS']=$she_id;
+}
+else
 {
-	$query="SELECT empleado.nombre as nombre, t_departamento.nombre as departamento, convert(varchar,horario.fecha, 120) AS fecha,
+	$she_id= $_SESSION['idS'];
+	$she_usr=$_SESSION['usuario'];
+}
+
+if (!empty($she_usr) && $she_id!=0) {
+	$query="SELECT  empleado.nombre as nombre, t_departamento.nombre as departamento, convert(varchar,horario.fecha, 120) AS fecha,
 			convert(varchar, horadeentrada, 108 ) AS horadeentrada, convert( varchar,horadesalida,  108 ) AS horadesalida, t_cargo.nombre as cargo, cedula, convert(varchar,tiempo_extra,108) as tiempo_extra, pago
 			FROM empleado, horario, solicitudes, solicitudhe, solicitudes_autorizadas, historial_empleado, t_departamento, t_cargo
 			WHERE solicitudhe.id = solicitudes_autorizadas.id_solicitud
@@ -23,15 +36,15 @@ if(isset($_SESSION['idS']))
 			AND solicitudhe.id = solicitudes.id_solicitud
 			AND empleado.id = horario.id_empleado
 			AND horario.fecha = solicitudhe.fecha
-			AND solicitudhe.id ={$_SESSION['idS']}
-			AND solicitudhe.usr = '{$_SESSION['usuario']}'
+			AND solicitudhe.id = {$she_id}
+			AND solicitudhe.usr = '{$she_usr}'
 			AND historial_empleado.id_empleado = empleado.id
 			AND historial_empleado.id_horario = horario.id
 			group by empleado.nombre, t_departamento.nombre, horario.fecha, horadeentrada, horadesalida, t_cargo.nombre, cedula, tiempo_extra, pago";
 	$params = array();
 	$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 	$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
-	
+
 	if($rs)
 	{
 		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
@@ -39,7 +52,7 @@ if(isset($_SESSION['idS']))
 			$temp[] = $fila['nombre'].";".$fila['cedula'].";".$fila['cargo'].";".$fila['departamento'].";".$fila['fecha'].";".$fila['horadeentrada'].";".$fila['horadesalida'].";".$fila['tiempo_extra'].";".$fila['pago'];
 		}		
 	}
-	
+
 	$queryTotal="SELECT ROUND(sum(pago),2) as totalpago
 				FROM empleado, horario, solicitudes, solicitudhe, solicitudes_autorizadas, historial_empleado, t_departamento, t_cargo
 				WHERE solicitudhe.id = solicitudes_autorizadas.id_solicitud
@@ -51,8 +64,8 @@ if(isset($_SESSION['idS']))
 				AND solicitudhe.id = solicitudes.id_solicitud
 				AND empleado.id = horario.id_empleado
 				AND horario.fecha = solicitudhe.fecha
-				AND solicitudhe.id ={$_SESSION['idS']}
-				AND solicitudhe.usr = '{$_SESSION['usuario']}'
+				AND solicitudhe.id ={$she_id}
+				AND solicitudhe.usr = '{$she_usr}'
 				AND historial_empleado.id_empleado = empleado.id
 				AND historial_empleado.id_horario = horario.id";
 	$rsTotal = sqlsrv_query($_SESSION['con'],$queryTotal, $params, $options);
@@ -63,6 +76,8 @@ else
 {
 	header('Location:seleccionados.php');
 }
+
+
 
 class PDF extends FPDF
 {
@@ -79,7 +94,7 @@ class PDF extends FPDF
 		// Movernos a la derecha
 		// Título
 		$this->SetFont('Arial','B',15);
-		$this->Cell(277,25,$_SESSION['titulo']." ". ManejadorSolicitud::obtenerNoOficio($_SESSION['idS']),0,0,'C');			
+		$this->Cell(277,25,"Reporte de Horas Extra ". ManejadorSolicitud::obtenerNoOficio($_SESSION['idS']),0,0,'C');			
 		// Salto de línea
 		$this->Ln(20);
 	}
@@ -105,7 +120,7 @@ class PDF extends FPDF
 			$w = array
 			(0 => 52,
 			 1 => 15,
-			 2 => 40,
+			 2 => 55,
 			 3 => 90,
 			 4 => 13,
 			 5 => 15, 
@@ -137,7 +152,7 @@ class PDF extends FPDF
 					$this->Cell($w[7],8,$columna[7],1,'LR');
 					$this->Cell($w[8],8,$columna[8]." RD$",1,'LR');			
 					$this->Ln();
-					$this->Cell(253,8,"Total",1,'LR');
+					$this->Cell(268,8,"Total",1,'LR');
 					$this->Cell(14,8,$total. " RD$",1,'LR');
 					$this->Ln();
 				}

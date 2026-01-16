@@ -54,7 +54,7 @@ else
 
 class PDF extends FPDF
 {
-	// Cabecera de página
+	// Cabecera de pÃ¡gina
 	function Header()
 	{
 		// Logo
@@ -64,20 +64,20 @@ class PDF extends FPDF
 		$this->SetFont('Arial','B',14);
 		$this->Ln(20);
 		// Movernos a la derecha
-		// Título
-		$this->Cell(190, 15, "Solicitud de trabajo de horas extra",0,0, 'C');
-		// Salto de línea
+		// TÃ­tulo
+		$this->Cell(190, 15, "Solicitud de trabajo de Horas Extra",0,0, 'C');
+		// Salto de lÃ­nea
 		$this->Ln(20);
 	}
 
-	// Pie de página
+	// Pie de pÃ¡gina
 	function Footer()
 	{
-		// Posición: a 1,5 cm del final
+		// PosiciÃ³n: a 1,5 cm del final
 		$this->SetY(-15);
 		// Arial italic 8
 		$this->SetFont('Arial','I',8);
-		// Número de página
+		// NÃºmero de pÃ¡gina
 		$this->Cell(0,10,date('d/m/Y'), 0,0,'C');
 		$this->Cell(0,10,'Pagina '.$this->PageNo().'/{nb}',0,0,'C');
 	}
@@ -89,29 +89,29 @@ class PDF extends FPDF
 		{
 			$columna = explode(";",$row); //separar los datos en posiciones de arreglo 
 			$this->SetFont('Times','B',13);
-			$this->Cell(45, 6, "Numero de Solicitud: ",0);
+			$this->Cell(45, 6, utf8_decode("NÃºmero de Solicitud: "),0);
 			
 			$this->SetFont('Times','',12);
 			$this->MultiCell(193,6,$columna[0],0);
 			
 			$this->Ln();
 			$this->SetFont('Times','B',13);
-			$this->Cell(50, 6, "Objetivo del periodo de trabajo extraordinario: ",0);
+			$this->Cell(50, 6, utf8_decode("Objetivo del perÃ­odo de trabajo extraordinario: "),0);
 			
 			$this->Ln();
 			
 			$this->SetFont('Times','',12);
-			$this->MultiCell(193,6,$columna[1],0,1);
+			$this->MultiCell(193,6,utf8_decode($columna[1]),0,1);
 			
 			$this->Ln();
 			
 			$this->SetFont('Times','B',13);
-			$this->Cell(50, 6, "Breve descripcion del trabajo extraordinario: ",0);
+			$this->Cell(50, 6, utf8_decode("Breve descripciÃ³n del trabajo extraordinario: "),0);
 			
 			$this->Ln();
 			
 			$this->SetFont('Times','',12);
-			$this->MultiCell(193,6,$columna[2],0,1);
+			$this->MultiCell(193,6,utf8_decode($columna[2]),0,1);
 			
 			$this->Ln();
 			
@@ -121,7 +121,7 @@ class PDF extends FPDF
 			$this->Ln();
 			
 			$this->SetFont('Times','',12);
-			$this->MultiCell(193,6,$columna[3],0,1);	
+			$this->MultiCell(193,6,utf8_decode($columna[3]),0,1);	
 			
 			$this->Ln();		
 			
@@ -134,7 +134,7 @@ class PDF extends FPDF
 			$this->Ln();
 
 			$this->SetFont('Times','B',13);
-			$this->Cell(80, 6, "Tiempo de ejecucion Estimado (Horas): ",0);
+			$this->Cell(80, 6, utf8_decode("Tiempo de ejecuciÃ³n Estimado (Horas): "),0);
 			
 			
 			$this->SetFont('Times','',12);
@@ -190,9 +190,9 @@ class PDF extends FPDF
 			foreach($tabla as $row)
 			{
 				$columna = explode(";",$row); //separar los datos en posiciones de arreglo 
-				$this->Cell($w[0],6,$columna[0],1,0,'C');
-				$this->Cell($w[1],6,$columna[1],1,0,'C');
-				$this->Cell($w[2],6,$columna[2],1,0,'C');
+				$this->Cell($w[0],6,utf8_decode($columna[0]),1,0,'C');
+				$this->Cell($w[1],6,utf8_decode($columna[1]),1,0,'C');
+				$this->Cell($w[2],6,utf8_decode($columna[2]),1,0,'C');
 				$this->Cell($w[3],6,$columna[3],1,0,'C');				
 				$this->Ln();
 			}
@@ -206,7 +206,7 @@ class PDF extends FPDF
 	}
 }
 
-// Creación del objeto de la clase heredada
+// CreaciÃ³n del objeto de la clase heredada
 $pdf=new PDF('P', 'mm', 'A4');
 $pdf->AliasNbPages();
 $pdf->AddPage();

@@ -12,7 +12,9 @@ class ManejadorUsuario
 			  <option value='Autorizador'>Autorizador</option>
 			  <option value='Viewer'>Viewer</option>
 			  <option value='Pago'>Pago</option>
-			  <option value='Asistente'>Asistente</option>";
+			  <option value='Asistente'>Asistente</option>
+			  <option value='Soporte'>Soporte</option>
+			  <option value='Gerente'>Gerente</option>";
 	}
 	
 	static function obtenerUsuarios()
@@ -20,7 +22,8 @@ class ManejadorUsuario
 		$query=" SELECT usuario.id as id, usuario, tipo, empleado.nombre as nombre
 			   FROM usuario, empleado
 			   WHERE empleado.id = usuario.empleado
-			   AND tipo <> 'SuperAdmin'";
+			   AND tipo <> 'SuperAdmin'
+			   ORDER BY empleado.nombre";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
 		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);

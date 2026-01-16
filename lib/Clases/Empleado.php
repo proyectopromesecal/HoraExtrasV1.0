@@ -125,7 +125,8 @@ class Empleado
 				codigo_empleado = '{$this->codigo_empleado}',
 				sueldo = '{$this->sueldo}',
 				horario_especial = {$this->horario_especial},
-				tipo_viatico ={$this->tipo_viatico}
+				tipo_viatico ={$this->tipo_viatico},
+				nivel = {$this->nivel}
 				WHERE
 				id = '{$this->id}'";
 			sqlsrv_query($_SESSION['con'],$query);
@@ -135,7 +136,7 @@ class Empleado
 			$query="INSERT INTO empleado 
 					(nombre, departamento, cedula, sueldo, cargo, codigo_empleado, horario_especial, tipo_viatico, nivel)
 					VALUES
-					('{$this->nombre}', '{$this->departamento}', '{$this->cedula}', '{$this->sueldo}', '{$this->cargo}', '{$this->codigo_empleado}', {$this->horario_especial}, {$this->tipo_viatico},0)";
+					('{$this->nombre}', '{$this->departamento}', '{$this->cedula}', '{$this->sueldo}', '{$this->cargo}', '{$this->codigo_empleado}', {$this->horario_especial}, {$this->tipo_viatico},{$this->nivel})";
 			sqlsrv_query($_SESSION['con'],$query);
 			
 			$queryScope = "select SCOPE_IDENTITY() scope";

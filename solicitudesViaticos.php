@@ -1,11 +1,14 @@
 <?php 
 include('lib/motor.php');
 
-$s = new Seguridad();
-
 if(!isset($_SESSION)){
 	session_start();
 }
+
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+$s = new Seguridad();
 
 if($s->verificar())
 {
@@ -33,69 +36,90 @@ else
 if($_POST)
 {
 	$rsCustom;
-	if(isset($_POST['btnBuscar']))
-	{
-		if ($_POST['slcFiltro']=='fecha')
-		{	
-			$rsCustom = ManejadorDietaViatico::obtenerFormularios($_SESSION['dpto'], $_POST['slcFecha'],"");
-		}
-	}
-	else if (isset($_POST['btnNuevo']))
-	{
-		header("Location:dietayviaticos.php");	
-	}
-	else if (isset($_POST['btnEditar']))
-	{
-		$t = count($_POST["check"]);
-		if($t>1)
-		{
-			echo "<script>alert('Para editar seleccione solo 1 solicitud');</script>";	
-		}
-		else
-		{
-			foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
-			{
-				header("Location:dietayviaticos.php?edit={$valor}");						
-			}			
-		}
-	}
-	else if (isset($_POST['btnEliminar']))
-	{
-		$t = count($_POST["check"]);
-		if($t>1)
-		{
-			echo "<script>alert('Para eliminar seleccione solo 1 solicitud');</script>";	
-		}
-		else
-		{
-			foreach($_POST["check"] as $valor)
-			{
-				header("Location:dietayviaticos.php?del={$valor}");						
-			}			
-		}		
-	}
-	else if (isset($_POST['btnImprimir']))
-	{
-		if(isset($_POST['check']))
+
+	if (isset($_POST['check'])){
+		if (isset($_POST['btnEditar']))
 		{
 			$t = count($_POST["check"]);
 			if($t>1)
 			{
-				echo "<script>alert('Para imprimir seleccione solo un formulario');</script>";	
+				echo "<script>alert('Para editar seleccione solo 1 solicitud');</script>";	
 			}
 			else
 			{
 				foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
 				{
-					echo "<script language='javascript'>window.open('ReporteDetalleViatico.php?f={$valor}','_blank');</script>";
-					echo "<script language='javascript'>window.open('DietaViaticoPDF.php?s={$valor}','_blank');</script>";
-					//header("Location:DietaViaticoPDF.php?s={$valor}");
+					header("Location:dietayviaticos.php?edit={$valor}");
 				}			
-			}	
+			}
 		}
-		else
+		else if (isset($_POST['btnEliminar']))
 		{
-			echo "<script>alert('Seleccione un formulario para imprimir);</script>";
+			$t = count($_POST["check"]);
+			if($t>1)
+			{
+				echo "<script>alert('Para eliminar seleccione solo 1 solicitud');</script>";	
+			}
+			else
+			{
+				foreach($_POST["check"] as $valor)
+				{
+					header("Location:dietayviaticos.php?del={$valor}");						
+				}			
+			}		
+		}
+		else if (isset($_POST['btnImprimir']))
+		{
+			if(isset($_POST['check']))
+			{
+				$t = count($_POST["check"]);
+				if($t>1)
+				{
+					echo "<script>alert('Para imprimir seleccione solo un formulario');</script>";	
+				}
+				else
+				{
+					foreach($_POST["check"] as $valor)// por cada valor de los checkbox seleccionados en POST
+					{
+						echo "<script language='javascript'>window.open('DietaViaticoPDF.php?s={$valor}','_blank');</script>";
+					}			
+				}	
+			}
+			else
+			{
+				echo "<script>alert('Seleccione un formulario para imprimir);</script>";
+			}		
+		}
+		else if (isset($_POST['btnTransporte']))
+		{
+			$t = count($_POST["check"]);
+			if($t != 1)
+			{
+				echo "<script>alert('Para asignar transporte seleccione solo 1 solicitud');</script>";	
+			}
+			else
+			{
+				if (!empty($_POST["check"])) {
+					foreach($_POST["check"] as $valor)
+					{
+						header("Location:dietayviaticos.php?asign={$valor}");						
+					}
+				}
+			}		
+		}
+	}
+	else
+	{
+		if(isset($_POST['btnBuscar']))
+		{
+			if ($_POST['slcFiltro']=='fecha')
+			{	
+				$rsCustom = ManejadorDietaViatico::obtenerFormularios( $_POST['slcFecha'],"");
+			}
+		}
+		else if (isset($_POST['btnNuevo']))
+		{
+			header("Location:dietayviaticos.php");	
 		}		
 	}
 }
@@ -103,35 +127,72 @@ if($_POST)
 <html>
 	<header>
 		<title>Dieta y viaticos</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style>
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+		</style>
 	</header>
 	<body>
 		<?php include("menu.html");?>
-		<div id='page'>
-			<center></br>
-				<fieldset style="width:60%;border-radius:8px;"><br>
+		<div id='contenido'>
+			<div class="container-fluid body-content">
+				<fieldset style="width:90%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
 					<form method="post" action="solicitudesViaticos.php">
-						<div style="width:100%;">
-							<button type="submit" name="btnImprimir" title="Imprimir"><img src='pics/print.png'></button> &nbsp 
-							<button type="submit" name="btnNuevo" title="Agregar Nueva Solicitud"><img src='pics/add.png' ></button> &nbsp 
-							<button type="submit" name="btnEditar" title="Editar"><img src='pics/edit.png'></button> &nbsp 
-							<button type="submit" name="btnEliminar" title="Eliminar"><img src='pics/delete.png' width="16" height="16"></button>&nbsp 
-							<select name="slcFiltro"><option value='fecha'>Fecha de Creacion</option></select> &nbsp <b>ES</b> &nbsp 
-							<input type="date" name="slcFecha" value=''></input>&nbsp 
-							<button type="submit" name="btnBuscar" class="submit">Buscar</button>
+						<div class="row">
+							<div class="row" style="margin: 10px 0px;">
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" class="btn btn-default btn-block" name="btnImprimir" title="Imprimir"><img src='pics/print.png'></button>
+								</div>
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" class="btn btn-info btn-block" name="btnNuevo" title="Agregar nueva solicitud"><img src='pics/add.png'></button>
+								</div>
+								<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+									<button type="submit" class="btn btn-warning btn-block" name="btnEditar" title="Editar"><img src='pics/edit.png'></button>
+								</div>
+								<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+									<button type="submit" class="btn btn-danger btn-block" name="btnEliminar" title="Eliminar"><img src='pics/delete.png' width="16" height="16"></button>
+								</div>	
+								<div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+									<button type="submit" class="btn btn-info btn-block"  name="btnTransporte" title="Asignar Transporte"><img src='pics/tr.png' width="16" height="16"></button>
+								</div>								
+							</div>
+						</div>
+						<div class="row">
+							<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+								<div class="form-group">
+									<select name="slcFiltro" class="form-control"><option value='fecha'>Fecha de Creacion</option></select>
+								</div>
+							</div>
+							<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+								<div class="form-group">
+									<input type="date" name="slcFecha" value='' class="form-control">
+								</div>
+							</div>
+							<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+								<button type="submit" name="btnBuscar" class="btn btn-primary btn-block ">Buscar</button>
+							</div>
 						</div>
 						<br>
-						<div class='center'>
-							<table class='tab_cadre_fixe' style="width:72%;">
-								<tr class='tab_bg_2'>
-									<th width="10%">Seleccion</th><th width="20%">No.Solicitud</th><th width="20%">Fecha de creacion</th><th width="20%">Cantidad de empleados</th>
+						<div class="row" style="width: 100%;margin: 0 auto; height: 60%;overflow: auto;">
+							<table class='table table-hover table-striped'>
+								<tr>
+									<th>Seleccion</th><th>No.Solicitud</th><th>Fecha de creacion</th><th>Cantidad de empleados</th><th>Transporte</th>
 								</tr>
 								<?php 
 									$rs;
 									if(strstr($_SESSION['tipo'], "SuperAdmin"))
 									{
-										$rs = ManejadorDietaViatico::obtenerFormularios($_SESSION['dpto'],"","");
+										$rs = ManejadorDietaViatico::obtenerFormularios("","");
 									}
 									else
 									{
@@ -141,7 +202,7 @@ if($_POST)
 										}
 										else
 										{
-											$rs =ManejadorDietaViatico::obtenerFormularios($_SESSION['dpto'],"","");
+											$rs =ManejadorDietaViatico::obtenerFormularios("","");
 										}							
 									}
 									
@@ -150,12 +211,20 @@ if($_POST)
 										while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
 										{
 											$cantidad = ManejadorDietaViatico::cantidadEmpleados($fila['id']);
+											if ($fila['transporte']==1) {
+												$msjTransporte = "Solicitado";
+											}
+											else
+											{
+												$msjTransporte = "No requiere";
+											}
 											echo "
-												<tr class='tab_bg_2'>
+												<tr>
 													<td align='center'><input type='checkbox' name='check[]' value='{$fila['id']}' readonly></input></td>
 													<td>{$fila['no_oficio']}</td>
 													<td>{$fila['fecha_creacion']->format('d/m/Y')}</td>
 													<td>"; echo $cantidad ."</td>
+													<td align='center'>{$msjTransporte}</td>
 												</tr>";
 										}
 									}
@@ -164,11 +233,11 @@ if($_POST)
 										echo "<script language='javascript' type='text/javascript'>alert('Hubo un problema al cargar las solicitudes de la base de datos.')</script>";
 									}
 								?>
-							</table>					
-						</div>					
+							</table>							
+						</div>		
 					</form>
 				</fieldset>	
-			</center>
+			</div>
 		</div>
 		<?php include("footer.html");?>
 	</body>

@@ -5,9 +5,14 @@ if(!isset($_SESSION)){
 	session_start();
 }
 $s = new Seguridad();
+
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+
 if($s->verificar())
 {
-	if(strcmp($s->verificarTipo(), "Administrador") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0)
+	if($s->verificar() == 'SuperAdmin' or in_array("Administrador", $_SESSION['permisos']))
 	{
 		$dia = new DiaFeriado();
 		$_SESSION['rutaActual']="Mantenimiento > Dias Feriados";
@@ -103,24 +108,50 @@ else if (isset($_GET['del']))
 <html>
 	<header>
 		<title>Mantenimiento de Dias Feriados</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style>
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+		</style>
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 	</header>
 	<body>
 		<?php include("menu.html");?>
-		<div id='page'>
-			<center></br>
-				<fieldset style="width:40%;border-radius:8px;"><br>
-					<form method="post" action="diasFeriados.php">
-						<div style="width:100%;">
-							<div style="width:100%;" >
-								<button type="submit" name="btnNuevo" title="Nuevo"><img src='pics/add.png'></button> &nbsp 
-								<button type="submit" name="btnEditar" title="Editar"><img src='pics/edit.png'></button> &nbsp 
-								<button type="submit" name="btnEliminar" title="Eliminar"><img src='pics/delete.png' height="16" width="16"></button>&nbsp 
-								<button type="submit" name="btnGuardar" title="Guardar Cambios"><img src='pics/sauvegardes.png' height="16" width="16"></button> &nbsp 
-							</div><br>
-							<div style="height:50%;overflow:auto;width:100%;">
-								<table class='tab_cadre_fixe' style="width:100%;">
+		<div id='contenido'>
+			<div class="container-fluid body-content">
+				<form method="post" action="diasFeriados.php">
+					<div class="row">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<fieldset style="width:95%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+								<legend>Opciones</legend>
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" name="btnNuevo" title="Nuevo Empleado" class="btn btn-info btn-block"><img src='pics/add.png'></button>
+								</div>
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" name="btnEditar" title="Editar Empleado" class="btn btn-warning btn-block"><img src='pics/edit.png'></button> 
+								</div>
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" name="btnEliminar" title="Eliminar Empleado" class="btn btn-warning btn-danger btn-block"><img src='pics/delete.png' height="16" width="16"></button>
+								</div>
+								<div class="col-xs-3 col-sm-3 col-md-3 col-lg-3">
+									<button type="submit" name="btnGuardar" title="Guardar Cambios" class="btn btn-primary btn-block"><img src='pics/sauvegardes.png' height="16" width="16"></button> 
+								</div>
+							</fieldset> 
+						</div>
+					</div>
+					<div class="row" style="margin-top: 10px;">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<div style="height:50%;overflow:auto;width:80%;margin: 0 auto;">
+								<table class='table table-striped' style="width:100%;">
 									<tr class='tab_bg_2'>
 										<th>Seleccion</th><th>Fecha</th><th>Motivo</th>
 									</tr>
@@ -128,18 +159,30 @@ else if (isset($_GET['del']))
 										ManejadorDiasFeriados::obtenerDiasFeriados();
 									?>
 								</table>					
-							</div>								
+							</div>
+
 						</div>
-						<div style="width:100%;">
+					</div>
+					<div class="row" style="width:80%;margin:0 auto;">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 							<input type="hidden" name="txtID" value="<?php echo $dia->getID();?>"></input>
-							<label><b>Fecha:</b> </label>
-							<input type="date" name="txtFecha" value='<?php echo date("Y-m-d",strtotime($dia->getFecha()));?>'> &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp
-							<label><b>Motivo:</b> </label><input type="text" name="txtMotivo" value="<?php echo $dia->getMotivo();?>"></input><br><br>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<div class="form-group">
+									<label><b>Fecha:</b> </label>
+									<input type="date" name="txtFecha" class='form-control' value='<?php echo date("Y-m-d",strtotime($dia->getFecha()));?>'>
+								</div>
+							</div>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+								<div class="form-group">
+									<label><b>Motivo:</b></label> 
+									<input type="text" name="txtMotivo" class='form-control' value="<?php echo $dia->getMotivo();?>"></input>
+								</div>
+							</div>
 						</div>
-					</form>
-				</fieldset>	
-			</center>
+					</div>
+				</form>
+			</div>
 		</div>
-		<?php include("footer.html")?>
+		<?php include("footer.html");?>
 	</body>
 </html>

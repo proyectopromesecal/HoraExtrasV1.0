@@ -7,7 +7,7 @@
 	$s = new Seguridad();
 	if($s->verificar())
 	{
-		if(strcmp($s->verificarTipo(), "Administrador") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0)
+		if($s->verificar() == 'SuperAdmin' or in_array("Administrador", $_SESSION['permisos']))
 		{	
 			$t;$f;
 			$m = new Manejador();

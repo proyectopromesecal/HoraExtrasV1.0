@@ -6,6 +6,9 @@ if(!isset($_SESSION)){
 	session_start();
 }
 $s = new Seguridad();
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
 if($s->verificar())
 {
 	if(strcmp($s->verificarTipo(), "Secretaria") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0 or strcmp($s->verificarTipo(), "Asistente") ==0)
@@ -42,12 +45,10 @@ if ($_POST)
 		}
 		$hora = date('H:i:s');
 		$dv->setID($_POST['txtID']);
-		$dv->setObjetivo($_POST['txtObjetivo']);
-		$dv->setDescripcion($_POST['txtDescripcion']);
+		$dv->setObjetivo(utf8_decode($_POST['txtObjetivo']));
 		$dv->setHora($hora);
 		$dv->setUsr($_SESSION['usuario']);
 		$dv->guardar();	
-		//metodo que guarda empleados	
 		//echo $dv->getID();
 		header("Location:dietayviaticos2.php?f={$dv->getID()}");	
 	}
@@ -61,39 +62,54 @@ else if (isset($_GET['del']))
 {
 	$dv->eliminar($_GET['del']);
 	ManejadorDietaViatico::eliminarEmpleadosS($_GET['del']);
+	ManejadorDietaViatico::eliminarDestino($_GET['del']);
+
+	echo "<script>location.href='/horasextra/solicitudesviaticos.php'</script>";
+}
+else if (isset($_GET['asign']))
+{
+	ManejadorDietaViatico::requerirTransporte($_GET['asign']);
 	echo "<script>location.href='/horasextra/solicitudesviaticos.php'</script>";
 }
 ?>
 <html>
 	<head>
 		<title>Dieta y Viaticos</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
-		<script language='javascript'>	
-			function abrirBeneficiarios()
-			{
-				window.open('empvia.php');
-			}
-		</script>
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
 		<style>
-			textarea
-			{
-				resize: none;
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
 			}
 		</style>
 	</head>
 	<body>
 		<?php include("menu.html");?>
-		<div id='page'>
-			<div style="width:50%;height:20%;"  class="tab_cadre_fixe">
+		<div id='contenido'>
+			<div class="container-fluid body-content">
 				<form method="post" action="dietayviaticos.php">
-					<div style="width:100%;border-radius:4px;margin-left:10px;">
-						<span style="float:left;"><label>Área o Dpto. Solicitante: &nbsp </label><input style="width:270px;" type="text" name="txtDepartamento" value="<?php echo $dv->getDepartamento();?>" required readonly></input>
-							<input type="submit" name="btnGuardar" value="Siguiente" class="submit"></input>
-						</span><br><br>
-						<span style="float:left;margin-right:10%;"><label>Objetivo del trabajo: </label><br><textarea name="txtObjetivo" rows="5" cols="50" required><?php echo $dv->getObjetivo();?></textarea></span>
-						<span style=""><label>Breve Descripcion: </label><br><textarea name="txtDescripcion" required rows="5" cols="50"><?php echo $dv->getDescripcion();?></textarea></span>
-					</div>	
-					<input type="hidden" name="txtID" value="<?php echo $dv->getID();?>"></input>		
+					<fieldset style="width:80%;border-radius:8px;border: 3px solid;float:none; margin: 0 auto;" class="well bs-component">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<div class="form-group">
+								<label>&Aacute;rea o Dpto. Solicitante: </label>
+								<input type="text" name="txtDepartamento" class="form-control" value="<?php echo $dv->getDepartamento();?>" required readonly></input>
+							</div>
+							<div class="form-group">
+								<label>Objetivo del trabajo: </label>
+								<textarea name="txtObjetivo" rows="5" cols="60" required class="form-control"><?php echo $dv->getObjetivo();?></textarea>
+							</div>
+							<input type="submit" name="btnGuardar" value="Siguiente" class="btn btn-primary " style="float:right;"></input>
+						</div>
+					</fieldset>	
+					<input type="hidden" name="txtID" value="<?php echo $dv->getID();?>"></input>	
+					<br>	
 				</form>				
 			</div>
 		</div>

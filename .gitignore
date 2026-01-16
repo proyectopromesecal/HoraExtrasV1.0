@@ -1,0 +1,30 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Dependency directories
+vendor/
+
+# Configuration and Secrets
+config.php
+lib/conexion.php
+*.env
+.env.local
+
+# Logs
+error_log
+access_log
+*.log
+
+# Temp files
+*.tmp
+
+# Uploads (Optional: depends if you want example uploads in repo or not, usually not)
+imagenes/temp/

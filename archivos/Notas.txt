@@ -1,4 +1,5 @@
-04/08/2014 - Ya no es necesario escribir "@promesecal.lan" en la pantalla de Login. Solo el nombre de usuario y la contraseña
-14/08/2014 - Para saber el comentario de una solicitud aprobada o rechazada simplemente mover el mouse encima del estado de la solicitud correspondiente, a continuacion se mostrara en un mensaje con el comentario.
-14/08/2014 - En la seleccion de los empleados que vanb a realizar un trabajo en horas extraordinarias, presione las teclas CTRL + F del teclado para abrir el buscador rapido. Con el buscador abierto puede buscar empleados por nombre, cedula o departamento.
-25/09/2014 - Ya no es necesario imprimir el reporte de pago de transporte separado por cada solicitud, en vez de eso utilizar el reporte consolidado semanal. En la pantalla de pago de transporte dar clic al boton "Reporte Semanal", a continuacion seleccionar la fecha de inicio y fin de la semana correspondiente (Lunes a Sabado) y presionar el boton "Generar reporte". Firmar la primera pagina del documento y enviar por correo a la persona correspondiente.
+2015-03-31 - Se ha cambiado el cálculo de horas extras a 0.5 (antes 1). Ahora cada media hora aumenta 0.5 al tiempo extra en vez de 1.
+2015-04-07 - Al momento de guardar el pago de una solicitud se haran varias validaciones y de un empleado no cumplir algunas de estas no podra ser seleccionado con el cotejo.
+2015-04-09 - Las omisiones de punch en el sistema las realizara RRHH directamente, salvo ciertas excepciones en los que DTIC tenga que intervenir.
+2015-04-09 - En el menu 'Reportes' esta disponible un documento donde pueden ver el acumulado de los empleados de su grupo. Para que en base a esto puedan planificar las solicitudes de los empleados.
+

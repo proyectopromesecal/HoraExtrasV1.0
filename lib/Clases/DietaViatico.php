@@ -10,7 +10,6 @@ class DietaViatico
 	private $lugar;
 	private $hora_entrada;
 	private $hora_salida;
-	private $descripcion;
 	private $fecha_creacion;
 	private $hora;
 	private $usr;
@@ -26,7 +25,6 @@ class DietaViatico
 	public function setNoOficio($x) { $this->no_oficio = $x; } 
 	public function setDepartamento($x) { $this->departamento = $x; } 
 	public function setObjetivo($x) { $this->objetivo = $x; } 
-	public function setDescripcion($x) { $this->descripcion = $x; }
 	public function setFecha_creacion($x) { $this->fecha_creacion = $x; }
 	public function setHora($x) { $this->hora = $x;}
 	public function getUsr() {return $this->usr;}
@@ -38,18 +36,16 @@ class DietaViatico
 		{
 			$query="UPDATE dietaviatico SET
 				departamento = '{$this->getDepartamento()}',
-				objetivo = '{$this->getObjetivo()}',
-				descripcion ='{$this->getDescripcion()}'
-				WHERE
-				id = '{$this->getID()}'";
+				objetivo = '{$this->getObjetivo()}'
+				WHERE id = '{$this->getID()}'";
 			$rs = sqlsrv_query($_SESSION['con'],$query);
 		}
 		else
 		{
 			$query="INSERT INTO dietaviatico 
-					(no_oficio, departamento, objetivo, fecha_creacion,descripcion, hora, usr)
+					(no_oficio, departamento, objetivo, fecha_creacion, hora, usr)
 					VALUES
-					('{$this->getNoOficio()}','{$this->getDepartamento()}', '{$this->getObjetivo()}', '{$this->getFecha_creacion()}', '{$this->getDescripcion()}', '{$this->getHora()}', '{$this->getUsr()}')";
+					('{$this->getNoOficio()}','{$this->getDepartamento()}', '{$this->getObjetivo()}', '{$this->getFecha_creacion()}', '{$this->getHora()}', '{$this->getUsr()}')";
 			sqlsrv_query($_SESSION['con'],$query);
 		    $res = sqlsrv_query($_SESSION['con'],"SELECT @@identity AS id"); 
 		    if ($row = sqlsrv_fetch_array($res, SQLSRV_FETCH_ASSOC)) { 
@@ -72,7 +68,6 @@ class DietaViatico
 			$this->id = $fila["id"];
 			$this->departamento = $fila["departamento"];
 			$this->objetivo = $fila["objetivo"];
-			$this->descripcion = $fila["descripcion"];
 			$this->no_oficio = $fila["no_oficio"];
 		}
 	}

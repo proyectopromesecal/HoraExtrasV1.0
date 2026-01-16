@@ -1,12 +1,12 @@
 <?php
 include_once("conexion.php");
+
 if(!isset($_SESSION))
 {
 	session_start();
 	$oCon = new conexion();
 	$_SESSION['con']= $oCon->getConexion();
 }
-include_once("config.php");
 include_once("Clases/Empleado.php");
 include_once("Clases/Manejador.php");
 include_once("Clases/ManejadorUsuario.php");
@@ -36,4 +36,5 @@ include_once("Clases/CSP.php");
 include_once("Clases/ManejadorRegionCSP.php");
 include_once("Clases/GrupoEmpleado.php");
 include_once("Clases/seguridad.php");
+$_SESSION['m']= new Manejador();
 date_default_timezone_set('America/Santo_Domingo');

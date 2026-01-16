@@ -4,15 +4,27 @@ if(!isset($_SESSION)){
 	session_start();
 }
 $s = new Seguridad();
+$domain = $_SERVER['HTTP_HOST'];  
+$url = "http://" . $domain . $_SERVER['REQUEST_URI']; 
+$includes = $_SESSION['m']->obtenerIncludes($url);
+
 if($s->verificar())
 {
-	if(strcmp($s->verificarTipo(), "Viewer") ==0  or strcmp($s->verificarTipo(), "SuperAdmin") ==0 or strcmp($s->verificarTipo(), "Secretaria") ==0 or strcmp($s->verificarTipo(), "Asistente") ==0)
+
+	$f=0;
+	foreach ($_SESSION['permisos'] as $value) {
+		if ($value == 'Viewer' || $value == 'SuperAdmin' || $value == 'Secretaria' || $value == 'Asistente') {
+			$f=1;
+		}
+	}
+
+	if($f)
 	{	
-		$_SESSION['rutaActual']="Reportes > Hora Extra";
+		$_SESSION['rutaActual']="Reportes > Horas Extra";
 	}
 	else
 	{
-		header("Location:index.php");
+		header("Location:../index.php");
 	}
 }
 else
@@ -23,25 +35,82 @@ if($_POST)
 {
 	if(isset($_POST['btnReporte']))
 	{
-		header("Location:horaextra.php?fi={$_POST['fechaInicio']}&ff={$_POST['fechaFinal']}");
+		$f=0;
+		foreach ($_SESSION['permisos'] as $value) {
+			if ($value == 'Viewer' || $value == 'SuperAdmin') {
+				$f=1;
+			}
+		}
+
+		if($f)
+		{
+			echo "<script>window.open('horaextra.php?fi={$_POST['fechaInicio']}&ff={$_POST['fechaFinal']}&dp={$_POST['slcDepartamento']}')</script>";
+		}
+		else
+		{
+			echo "<script>window.open('horaextra.php?fi={$_POST['fechaInicio']}&ff={$_POST['fechaFinal']}')</script>";
+		}
 	}
 }
 ?>
 <html>
 	<head>
 		<title>Reporte de Hora Extra</title>
-		<link rel="stylesheet" href="css/styles.css" type="text/css" media="screen">
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<?php echo $includes;?>
+		<style type="text/css">
+			#contenido{
+				position: fixed;
+			    top: 120px;
+			    bottom: 100px;
+			    left: 0;
+			    right: 0;
+			    overflow: auto;
+			}
+
+		</style>
 	</head>
-	<body class="ext-webkit ext-chrome">
-		<?php include("../menu.html");?>
-			<div id="page">
-				<form method="post" action="">
-					<center>
-						<input type="date" name="fechaInicio" required></input> - <input type="date" name="fechaFinal" required></input>
-						<input type="submit" value="Generar reporte" name="btnReporte" class="submit" style="width:200px"></input>						
-					</center>
-				</form>			
-			</div>
+	<body>
+		<header>
+			<?php include("../menu.html");?>
+		</header>
+		
+		<div id="contenido">
+			<div class="container-fluid body-content">
+				<fieldset class="well bs-component" style="border-radius:8px;border: 3px solid;width:90%;margin: 0 auto;">
+					<legend>B&uacute;squeda de Hora Extra</legend>
+					<div class="row text-center">
+						<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+							<form method="post" action="" class="form-inline">
+								<?php 
+									$f=0;
+									foreach ($_SESSION['permisos'] as $value) {
+										if ($value == 'Viewer' || $value == 'SuperAdmin') {
+											$f=1;
+										}
+									}
+
+									if($f)
+									{
+										echo "<div class='form-group'>
+												<select name='slcDepartamento' class='form-control'>"; Manejador::obtenerDepartamentos();echo"</select> 
+										</div>";
+									}
+								?>
+								<div class="form-group">
+									<input type="date" name="fechaInicio" required class="form-control"> - <input type="date" name="fechaFinal" required class="form-control">
+								</div>
+								<div class="form-group">
+									<input type="submit" value="Generar Reporte" name="btnReporte" class="btn btn-primary" ></input>	
+								</div>	
+							</form>	
+						</div>
+					</div>
+				</fieldset>	
+			</div>	
+		</div>
 		<?php include("../footer.html");?>
 	</body>
 </html>

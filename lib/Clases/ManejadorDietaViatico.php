@@ -140,13 +140,12 @@ class ManejadorDietaViatico
 		}
 	}
 	
-	static function obtenerBeneficiarios($dpto, $idS)
+	static function obtenerBeneficiarios($idS)
 	{
 		$idEmp = array();
 		$query="SELECT empleado.id as id, cedula, empleado.nombre as nombre, t_cargo.nombre as cargo,posicion_viatico.posicion as concepto , total
 				from empleado, dietaviatico, viatico_empleado, posicion_viatico, t_cargo
-				where dietaviatico.departamento = '{$dpto}'
-				AND empleado.id = viatico_empleado.id_empleado
+				where empleado.id = viatico_empleado.id_empleado
 				AND t_cargo.id = empleado.cargo
 				AND dietaviatico.id = {$idS}
 				AND tipo_viatico = posicion_viatico.id
@@ -165,8 +164,7 @@ class ManejadorDietaViatico
 						<td class='tab_bg_2'>{$fila['cargo']}</td>
 						<td class='tab_bg_2'>{$fila['concepto']}</td>
 						<td class='tab_bg_2'>{$fila['total']}</td>
-					</tr>
-				";
+					</tr>";
 				$idEmp[] = $fila['id'];	
 			}
 			$_SESSION['bnfViaticos'] = $idEmp;
@@ -181,6 +179,11 @@ class ManejadorDietaViatico
 		$arrHoraS = array();
 		$arrLugar = array();
 		$arrIDDestinos = array();
+
+		$desayuno = false;
+		$almuerzo = false; 
+		$cena = false; 
+		$dormitorio= false;
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
 
@@ -208,37 +211,77 @@ class ManejadorDietaViatico
 		{
 			while($filaEmp=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
 			{
-				$tdes=0; $tal=0; $tcen=0; $tdor =0;
-				$total =0;
-				$dias;
+				$total=0;
+				$dias=0;
 				//echo "Empleado: ".$filaEmp['id'];
 				for($f=0;$f<count($arrFechaE);$f++)
 				{
 					//echo "<br><br>"." Grupo de fecha: {$f}"."<br>";
 					
 					$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
-					
 					$dias = (strtotime($arrFechaE[$f]->format('Y-m-d'))-strtotime($arrFechaS[$f]->format('Y-m-d')))/86400;
-					$dias = abs($dias); $dias = floor($dias);					
+					$dias = abs($dias); $dias = floor($dias);									
 					//echo "Dias ".$dias."<br>";
+					$x=0;
 					for($x=0;$x<=$dias;$x++)
 					{
 						$horaE = explode(":", $arrHoraE[$f]->format('H:i:s'));
 						$horaS = explode(":", $arrHoraS[$f]->format('H:i:s'));
-						if($horaE[0] <= 7)
+						if ($dias>=1)
 						{
-							$desayuno = true;
-							$tdes+=1;
+							if ($x==$dias) {
+								if($arrHoraS[$f]->format('H:i:s') > '05:46')
+								{
+									//echo "desayuno x=dias entrada <br>";
+									$desayuno = true;
+								}
+
+								if($arrHoraS[$f]->format('H:i:s') >='13:00') {
+									$almuerzo=true;
+								}
+
+								if ($arrHoraS[$f]->format('H:i:s')>='18:00') {
+									$cena = true;
+								}
+							}
+							else
+							{
+								if ($x==0) {
+									if($arrHoraE[$f]->format('H:i:s') <= '05:46' )
+									{
+										$desayuno = true;
+									}
+
+									if($arrHoraE[$f]->format('H:i:s') <='12:00' ) {//&& $arrHoraS[$f]->format('H:i:s') >='13:00'
+										$almuerzo=true;
+									}
+
+									$cena = true;
+								}
+								else
+								{
+									$desayuno = true;
+										
+									$almuerzo=true;
+
+									$cena = true;							
+								}
+							}
 						}
-						if ($horaS[0] >= 12)
+						else
 						{
-							$almuerzo = true;
-							$tal+=1;
-						}
-						if ($horaS[0]>=18)
-						{
-							$cena = true;
-							$tcen+=1;
+							if($arrHoraE[$f]->format('H:i:s') <= '05:46')
+							{
+								$desayuno = true;
+							}
+
+							if($arrHoraE[$f]->format('H:i:s') <'12:00' && $arrHoraS[$f]->format('H:i:s') >='13:00' ) {
+								$almuerzo=true;
+							}
+
+							if ($arrHoraS[$f]->format('H:i:s') >='18:00') {
+								$cena = true;
+							}
 						}
 
 						if($desayuno)
@@ -256,14 +299,21 @@ class ManejadorDietaViatico
 							//echo "Cena: {$filaEmp['cena']}"."<br>";
 							$total += $filaEmp['cena'];
 						}
+						$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
 					}
-					$dormitorio = $filaEmp['dormitorio'] * $dias;
+					if (ManejadorDietaViatico::esChofer($filaEmp['id']) && ManejadorDietaViatico::viajaConTecnico($idF)) {
+						$dormitorio = ManejadorDietaViatico::obtenerDormitorioTecnico() * $dias;
+					}
+					else
+					{
+						$dormitorio = $filaEmp['dormitorio'] * $dias;
+					}
+					
 					//echo "Dormitorio: {$dormitorio} ({$dias} dias)"."<br>";
 					$total += $dormitorio;		
 					$tdor= $dias;
 						
 					//$total = 0;
-					$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
 				}
 				$query2="SELECT id
 						 FROM viatico_empleado
@@ -272,7 +322,7 @@ class ManejadorDietaViatico
 				$rs2 = sqlsrv_query($_SESSION['con'],$query2, $params, $options);
 				if($rs2)
 				{
-					if(sqlsrv_num_rows($rs2) >0)
+					if(sqlsrv_num_rows($rs2) ==1)
 					{
 						while($fila=sqlsrv_fetch_array($rs2, SQLSRV_FETCH_ASSOC))
 						{
@@ -288,6 +338,177 @@ class ManejadorDietaViatico
 		}
 	}
 	
+	static function calcularViaticoT($idF)
+	{
+		$arrFechaE = array();
+		$arrFechaS = array();
+		$arrHoraE = array();
+		$arrHoraS = array();
+		$arrLugar = array();
+		$arrIDDestinos = array();
+
+		$desayuno = false;
+		$almuerzo = false; 
+		$cena = false; 
+		$dormitorio= false;
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+
+		$queryCargar="SELECT * FROM destinos_viaticos WHERE id_viatico = {$idF}";
+		$rsCargar = sqlsrv_query($_SESSION['con'],$queryCargar, $params, $options);
+		while($filaC=sqlsrv_fetch_array($rsCargar, SQLSRV_FETCH_ASSOC))
+		{
+			$arrIDDestinos[] =$filaC['id'];
+			$arrFechaE[]=$filaC['fecha_entrada'];
+			$arrFechaS[]=$filaC['fecha_salida'];
+			$arrHoraE[]=$filaC['hora_entrada'];
+			$arrHoraS[]=$filaC['hora_salida'];
+			$arrLugar[]=$filaC['lugar'];
+		}			
+		
+		$query="SELECT empleado.id AS id, desayuno, almuerzo, cena, dormitorio
+				FROM empleado, dietaviatico, viatico_empleado, posicion_viatico
+				WHERE empleado.id = viatico_empleado.id_empleado
+				AND dietaviatico.id = viatico_empleado.id_formulario
+				AND dietaviatico.id ={$idF}
+				AND empleado.id = viatico_empleado.id_empleado
+				AND empleado.tipo_viatico = posicion_viatico.id";
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			while($filaEmp=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+			{
+				$total=0;
+				$dias=0;
+				//echo "Empleado: ".$filaEmp['id'];
+				for($f=0;$f<count($arrFechaE);$f++)
+				{
+					//echo "<br><br>"." Grupo de fecha: {$f}"."<br>";
+					
+					$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
+					$dias = (strtotime($arrFechaE[$f]->format('Y-m-d'))-strtotime($arrFechaS[$f]->format('Y-m-d')))/86400;
+					$dias = abs($dias); $dias = floor($dias);									
+					//echo "Dias ".$dias."<br>";
+					$x=0;
+					for($x=0;$x<=$dias;$x++)
+					{
+						$horaE = explode(":", $arrHoraE[$f]->format('H:i:s'));
+						$horaS = explode(":", $arrHoraS[$f]->format('H:i:s'));
+						if ($dias>=1)
+						{
+							if ($x==$dias) {
+								if($arrHoraS[$f]->format('H:i:s') > '05:46')
+								{
+									//echo "desayuno x=dias entrada <br>";
+									$desayuno = true;
+								}
+
+								if($arrHoraS[$f]->format('H:i:s') >='13:00') {
+									$almuerzo=true;
+								}
+
+								if ($arrHoraS[$f]->format('H:i:s')>='18:00') {
+									$cena = true;
+								}
+							}
+							else
+							{
+								if ($x==0) {
+									if($arrHoraE[$f]->format('H:i:s') <= '05:46' )
+									{
+										$desayuno = true;
+									}
+
+									if($arrHoraE[$f]->format('H:i:s') <='12:00' ) {//&& $arrHoraS[$f]->format('H:i:s') >='13:00'
+										$almuerzo=true;
+									}
+
+									$cena = true;
+								}
+								else
+								{
+									$desayuno = true;
+										
+									$almuerzo=true;
+
+									$cena = true;							
+								}
+							}
+						}
+						else
+						{
+							if($arrHoraE[$f]->format('H:i:s') <= '05:46')
+							{
+								$desayuno = true;
+							}
+
+							if($arrHoraE[$f]->format('H:i:s') <'12:00' && $arrHoraS[$f]->format('H:i:s') >='13:00' ) {
+								$almuerzo=true;
+							}
+
+							if ($arrHoraS[$f]->format('H:i:s') >='18:00') {
+								$cena = true;
+							}
+						}
+
+						if($desayuno)
+						{
+							//echo "Desayuno: {$filaEmp['desayuno']}"."<br>";
+							$total += $filaEmp['desayuno'] * 1.05;
+						}
+						if ($almuerzo)
+						{
+							//echo "Almuerzo: {$filaEmp['almuerzo']}"."<br>";
+							$total += $filaEmp['almuerzo'] * 1.05;
+						}
+						if ($cena)
+						{
+							//echo "Cena: {$filaEmp['cena']}"."<br>";
+							$total += $filaEmp['cena']* 1.05;
+						}
+						$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
+					}
+					if (ManejadorDietaViatico::esChofer($filaEmp['id']) && ManejadorDietaViatico::viajaConTecnico($idF)) {
+						$dormitorio = ManejadorDietaViatico::obtenerDormitorioTecnico() * $dias;
+					}
+					else
+					{
+						$dormitorio = $filaEmp['dormitorio'] * $dias;
+					}
+					
+					//echo "Dormitorio: {$dormitorio} ({$dias} dias)"."<br>";
+					
+					
+					$total += $dormitorio * 1.05;		
+					$tdor= $dias;
+						
+					//$total = 0;
+				}
+				$query2="SELECT id
+						 FROM viatico_empleado
+						 WHERE id_empleado = {$filaEmp['id']}
+						 AND id_formulario = {$idF}";
+				$rs2 = sqlsrv_query($_SESSION['con'],$query2, $params, $options);
+				if($rs2)
+				{
+					if(sqlsrv_num_rows($rs2) ==1)
+					{
+						while($fila=sqlsrv_fetch_array($rs2, SQLSRV_FETCH_ASSOC))
+						{
+							$query3 ="  UPDATE viatico_empleado SET total ={$total} 
+										WHERE id={$fila['id']}";
+							sqlsrv_query($_SESSION['con'],$query3, $params, $options);							
+						}
+					}
+				}
+				
+				//echo "Total: ".$total."<br>";
+			}
+		}
+	}
+
+
+
 	static function guardarDestinos($idS, $arrFechaE, $arrFechaS, $arrHoraE, $arrHoraS, $arrLugar)
 	{
 		$i =count($arrFechaE);
@@ -304,14 +525,16 @@ class ManejadorDietaViatico
 					AND hora_salida = '{$arrHoraS[$x]}'
 					AND lugar = '{$arrLugar[$x]}'";
 			$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+			
 			if($rs)
 			{
 				if(sqlsrv_num_rows($rs) == 0)
 				{
+					$lugar=utf8_decode($arrLugar[$x]);
 					$query2="INSERT INTO destinos_viaticos
 					(id_viatico, fecha_entrada, fecha_salida, hora_entrada, hora_salida, lugar)
 					VALUES
-					({$idS}, '{$arrFechaE[$x]}', '{$arrFechaS[$x]}', '{$arrHoraE[$x]}', '{$arrHoraS[$x]}', '{$arrLugar[$x]}' )";
+					({$idS}, '{$arrFechaE[$x]}', '{$arrFechaS[$x]}', '{$arrHoraE[$x]}', '{$arrHoraS[$x]}', '{$lugar}' )";
 					sqlsrv_query($_SESSION['con'],$query2, $params, $options);
 				}
 			}		
@@ -325,24 +548,18 @@ class ManejadorDietaViatico
 		sqlsrv_query($_SESSION['con'],$query);
 	}
 	
-	static function obtenerFormularios($dpto, $fechac, $fechas)
+	static function obtenerFormularios($fechac, $fechas)
 	{
-		if(empty($departamento))
-		{
-			$query="SELECT dietaviatico.id as id, dietaviatico.no_oficio as no_oficio, dietaviatico.fecha_creacion as fecha_creacion
-					FROM dietaviatico
-					WHERE dietaviatico.usr = '{$_SESSION['usuario']}' ";
-		}
-		else
-		{
-			$query="SELECT dietaviatico.id as id, dietaviatico.no_oficio as no_oficio, dietaviatico.fecha_creacion as fecha_creacion
-					FROM dietaviatico
-					WHERE dietaviatico.usr = '{$_SESSION['usuario']}' ";
-		}
+
+		$query="SELECT TOP 300 dietaviatico.id as id, dietaviatico.no_oficio as no_oficio, dietaviatico.fecha_creacion as fecha_creacion, transporte
+				FROM dietaviatico
+				WHERE dietaviatico.usr = '{$_SESSION['usuario']}' ";
+
 		if (!empty($fechac))
 		{
-			$query.= " AND dietaviatico.fecha_creacion ='{$fechac}'";
+			$query.= " AND dietaviatico.fecha_creacion ='{$fechac}' ";
 		}
+		$query.=" ORDER BY fecha_creacion desc";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
 		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
@@ -408,15 +625,13 @@ class ManejadorDietaViatico
 		}
 	}
 
-	static function obtenerBeneficiariosReporte($dpto, $idS)
+	static function obtenerBeneficiariosReporte($idS)
 	{
-		$query="SELECT cedula, empleado.nombre as nombre, t_cargo.nombre as cargo,posicion_viatico.posicion as concepto , total
-				from empleado, dietaviatico, viatico_empleado, posicion_viatico, t_cargo
-				where dietaviatico.departamento = '{$dpto}'
+		$query="SELECT cedula, empleado.nombre as nombre, t_cargo.nombre as cargo , REPLACE(CONVERT(VARCHAR,CONVERT(MONEY,total),1), '.00','')as total
+				from empleado, dietaviatico, viatico_empleado, t_cargo
+				where dietaviatico.id = {$idS}
 				AND t_cargo.id = empleado.cargo
 				AND empleado.id = viatico_empleado.id_empleado
-				AND dietaviatico.id = {$idS}
-				AND tipo_viatico = posicion_viatico.id
 				AND viatico_empleado.id_formulario = dietaviatico.id";
 		$params = array();
 		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
@@ -551,233 +766,7 @@ class ManejadorDietaViatico
 	
 	static function obtenerReportePunch($id_viatico)
 	{
-		$m = new Manejador();
-		$datos = array();
-		$idD = array();
-		$lugar =array();
-		$fs = array();
-		$fe = array();
-		$he = array();
-		$hs = array();
-		$emp = array();
-		$totalesbd = array();
-		$totalespn = array();
-		
-		$query="SELECT *
-				FROM destinos_viaticos
-				WHERE id_viatico = {$id_viatico}";
-		$params = array();
-		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
-		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
-		
-		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-		{
-			$idD[] = $fila['id'];
-			$fs[] = $fila['fecha_salida'];
-			$fe[] = $fila['fecha_entrada'];
-			$hs[] = $fila['hora_salida'];
-			$he[] = $fila['hora_entrada'];
-			$lugar[] = $fila['lugar'];
-		}
-		
-		$query="SELECT id_empleado, desayuno, almuerzo, cena, dormitorio
-				FROM viatico_empleado, posicion_viatico, empleado
-				WHERE id_formulario = {$id_viatico}
-				AND empleado.id = viatico_empleado.id_empleado
-				AND empleado.tipo_viatico = posicion_viatico.id";	
-		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
-		
-		while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-		{
-			$empleado = $fila['id_empleado'];
-			$emp[]=$fila['id_empleado'];
-			$totalesbd[$empleado]=0;
-			for($x=0;$x<count($fe);$x++)
-			{
-				$datos['nombre'][$empleado]=$m->obtenerNombre($empleado);
-				$tdes=0; $tal=0; $tcen=0; $tdor =0;
-				$total1 =0;
-				$dias;
-				//echo $m->obtenerNombre($empleado);
-				//echo "<br>---FOR recorrido {$x} ---<br>";
-				$sql="	SELECT empleado.nombre as nombre, horadeentrada, horadesalida
-						FROM empleado, horario
-						WHERE empleado.id = horario.id_empleado
-						AND empleado.id = {$empleado}
-						AND horario.fecha = '{$fe[$x]->format('Y-m-d')}'";
-				$rs2 = sqlsrv_query($_SESSION['con'],$sql, $params, $options);
-				if(sqlsrv_num_rows($rs2) > 0 )
-				{
-					while($filaEmp=sqlsrv_fetch_array($rs2, SQLSRV_FETCH_ASSOC))
-					{		
-						//echo "<br><br>"." Grupo de fecha: {$fe[$x]}"."<br>";
-						$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
-						
-						$dias = (strtotime($fe[$x]->format('Y-m-d'))-strtotime($fs[$x]->format('Y-m-d')))/86400;
-						$dias = abs($dias); $dias = floor($dias);					
-						//echo "Dias ".$dias."<br>";
-						$horaE = explode(":", $filaEmp['horadeentrada']->format('H:i:s'));
-						$horaS = explode(":", $filaEmp['horadesalida']->format('H:i:s'));
-						//echo $filaEmp['horadeentrada']."   ";
-						//echo $filaEmp['horadesalida']."<br>";
-						if($horaE[0] <= 7)
-						{
-							$desayuno = true;
-							$tdes+=1;
-						}
-						if ($horaS[0] >= 12)
-						{
-							$almuerzo = true;
-							$tal+=1;
-						}
-						if ($horaS[0]>=18)
-						{
-							$cena = true;
-							$tcen+=1;
-						}
 
-						if($desayuno)
-						{
-							//echo "Desayuno: {$fila['desayuno']}"."<br>";
-							$total1 += $fila['desayuno'];
-						}
-
-						if ($almuerzo)
-						{
-							//echo "Almuerzo: {$fila['almuerzo']}"."<br>";
-							$total1 += $fila['almuerzo'];
-						}
-
-						if ($cena)
-						{
-							//echo "Cena: {$fila['cena']}"."<br>";
-							$total1 += $fila['cena'];
-						}
-
-						$dormitorio = $fila['dormitorio'] * $dias;
-						//echo "Dormitorio: {$dormitorio} ({$dias} dias)"."<br>";
-						$total1 += $dormitorio;		
-							
-						//$total = 0;
-						//$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
-					}	
-					//echo "Total: ".$total1."<br><br>";
-					//$totalesbd[$empleado]+=$total1;
-					$totalesbd[$empleado]+=$total1;
-				}
-				else
-				{
-					//echo $m->obtenerNombre($empleado)." no tiene datos en esta fecha. <br>";
-				}
-			}				
-		}
-		
-		//echo "<pre>";
-		//echo var_dump($datos);
-		//echo "</pre>";
-		
-		$arrFechaE = array();
-		$arrFechaS = array();
-		$arrHoraE = array();
-		$arrHoraS = array();
-		$arrLugar = array();
-		$arrIDDestinos = array();
-		
-		$queryCargar="SELECT * FROM destinos_viaticos WHERE id_viatico = {$id_viatico}";
-		$rsCargar = sqlsrv_query($_SESSION['con'],$queryCargar, $params, $options);
-		while($filaC=sqlsrv_fetch_array($rsCargar, SQLSRV_FETCH_ASSOC))
-		{
-			$arrIDDestinos[] =$filaC['id'];
-			$arrFechaE[]=$filaC['fecha_entrada'];
-			$arrFechaS[]=$filaC['fecha_salida'];
-			$arrHoraE[]=$filaC['hora_entrada'];
-			$arrHoraS[]=$filaC['hora_salida'];
-			$arrLugar[]=$filaC['lugar'];
-		}			
-		
-		$query="SELECT empleado.id AS id, desayuno, almuerzo, cena, dormitorio
-				FROM empleado, dietaviatico, viatico_empleado, posicion_viatico
-				WHERE empleado.id = viatico_empleado.id_empleado
-				AND dietaviatico.id = viatico_empleado.id_formulario
-				AND dietaviatico.id ={$id_viatico}
-				AND empleado.id = viatico_empleado.id_empleado
-				AND empleado.tipo_viatico = posicion_viatico.id";
-		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
-		if($rs)
-		{
-			
-			while($filaEmpt=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
-			{
-				$tdes=0; $tal=0; $tcen=0;
-				$total =0;
-				$dias;
-				$totalespn[$filaEmpt['id']]=0;
-				//echo "Empleado: ".$filaEmpt['id'];
-				for($f=0;$f<count($arrFechaE);$f++)
-				{
-					//echo "<br><br>"." Grupo de fecha: {$f}"."<br>";
-					$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
-					
-					$dias = (strtotime($arrFechaE[$f]->format('Y-m-d'))-strtotime($arrFechaS[$f]->format('Y-m-d')))/86400;
-					$dias = abs($dias); $dias = floor($dias);					
-					//echo "Dias ".$dias."<br>";
-					for($x=0;$x<=$dias;$x++)
-					{
-						$horaE = explode(":", $arrHoraE[$f]->format('H:i:s'));
-						$horaS = explode(":", $arrHoraS[$f]->format('H:i:s'));
-						if($horaE[0] <= 7)
-						{
-							$desayuno = true;
-							$tdes+=1;
-						}
-						if ($horaS[0] >= 12)
-						{
-							$almuerzo = true;
-							$tal+=1;
-						}
-						if ($horaS[0]>=18)
-						{
-							$cena = true;
-							$tcen+=1;
-						}
-
-						if($desayuno)
-						{
-							//echo "Desayuno: {$filaEmpt['desayuno']}"."<br>";
-							$total += $filaEmpt['desayuno'];
-						}
-						if ($almuerzo)
-						{
-							//echo "Almuerzo: {$filaEmpt['almuerzo']}"."<br>";
-							$total += $filaEmpt['almuerzo'];
-						}
-						if ($cena)
-						{
-							//echo "Cena: {$filaEmpt['cena']}"."<br>";
-							$total += $filaEmpt['cena'];
-						}
-					}
-					$dormitorio = $filaEmpt['dormitorio'] * $dias;
-					//echo "Dormitorio: {$dormitorio} ({$dias} dias)"."<br>";
-					$total += $dormitorio;
-					
-					
-					//$total = 0;
-					//$desayuno = false; $almuerzo = false; $cena = false; $dormitorio= false;
-				}							
-				//echo "Total: ".$total."<br>";
-				$totalespn[$filaEmpt['id']]+= $total;
-				//$totalespn[]+= $total;
-			}
-			$datos['totalpn'] = $totalespn;	
-			$datos['totalbd'] = $totalesbd;	
-		}
-		for($c=0;$c<count($totalesbd);$c++)
-		{
-			$datos['debe'][$emp[$c]]=($totalespn[$emp[$c]]- $totalesbd[$emp[$c]]);
-			//echo $m->obtenerNombre($emp[$c])." Debe devolver: ". ($totalesbd[$emp[$c]] - $totalespn[$emp[$c]]) * -1 ."<br><br>"; 
-		}
-		return array($datos,$emp);
 	}
 	
 	static function eliminarEmpleadosS($idS)
@@ -785,7 +774,346 @@ class ManejadorDietaViatico
 		$query="DELETE FROM viatico_empleado WHERE id_formulario={$idS}";
 		$rs=sqlsrv_query($_SESSION['con'],$query);
 	}
+
+	static function obtenerChoferes()
+	{
+		$result = array();
+		$query="SELECT id
+				FROM empleado e
+				where e.cargo in(39,41)
+				ORDER BY nombre";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+				$result[]=$fila['id'];
+			}
+			
+		}
+		return $result;
+	}
+
+	static function asignarChofer($chofer,$solicitud)
+	{
+		$query = "SELECT * from transporte_viatico 
+					where id_chofer={$chofer} 
+					AND id_viatico = {$solicitud} 
+					AND usr='{$_SESSION['usuario']}'";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			if (sqlsrv_num_rows($rs) <= 1) {
+				$fecha= date('Y-m-d H:i:s');
+				$queryI = "INSERT into transporte_viatico (id_viatico, id_chofer, fecha, usr) VALUES ({$solicitud}, {$chofer}, convert(datetime,'{$fecha}', 120), '{$_SESSION['usuario']}')";
+				$rsi = sqlsrv_query($_SESSION['con'],$queryI, $params, $options);
+
+			}
+		}
+		else
+		{
+			if( ($errors = sqlsrv_errors() ) != null) {
+		        foreach( $errors as $error ) {
+		            echo "SQLSTATE: ".$error[ 'SQLSTATE']."<br />";
+		            echo "code: ".$error[ 'code']."<br />";
+		            echo "message: ".$error[ 'message']."<br />";
+		        }
+	    	}
+		}
+		ManejadorDietaViatico::calcularViatico($solicitud);
+	}
+
+	static function obtenerCategoriaEmpSolicitud($idF)
+	{
+		$empleados = array();
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+		$query="SELECT posicion_viatico.posicion as categoria, desayuno, almuerzo, cena, dormitorio
+				FROM empleado, posicion_viatico, dietaviatico, viatico_empleado
+				where tipo_viatico = posicion_viatico.id
+				AND empleado.id = viatico_empleado.id_empleado
+				AND dietaviatico.id = viatico_empleado.id_formulario
+				AND dietaviatico.id = {$idF}
+				GROUP BY posicion_viatico.posicion, desayuno, almuerzo, cena, dormitorio";
+		$rs=sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if($rs)
+		{
+			while($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+			{
+				$empleados[] = $fila['categoria'].";".$fila['desayuno'].";".$fila['almuerzo'].";".$fila['cena'].";".$fila['dormitorio'];
+			}
+		}
+		return $empleados;
+	}
+
+	static function obtenerDetalleViatico($idS)
+	{
+		$conteo = array();
+		$tdes=0;
+		$tal=0;
+		$tcen=0;
+		$tdor=0;
+
+		$arrFechaE = array();
+		$arrFechaS = array();
+		$arrHoraE = array();
+		$arrHoraS = array();
+		$conteo = array();
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+
+		$queryCargar="SELECT * FROM destinos_viaticos WHERE id_viatico = {$idS}";
+
+		$rsCargar=sqlsrv_query($_SESSION['con'],$queryCargar, $params, $options);
+		
+		while($filaC=sqlsrv_fetch_array($rsCargar, SQLSRV_FETCH_ASSOC))
+		{
+			$arrFechaE[]=$filaC['fecha_entrada'];
+			$arrFechaS[]=$filaC['fecha_salida'];
+			$arrHoraE[]=$filaC['hora_entrada'];
+			$arrHoraS[]=$filaC['hora_salida'];
+		}	
+		
+		$dias;
+		for($f=0;$f<count($arrFechaE);$f++)
+		{
+			$fecha = $arrFechaE[$f]->format('Y-m-d');
+			$fecha2 = $arrFechaS[$f]->format('Y-m-d');
+			
+			$dias = (strtotime($arrFechaE[$f]->format('Y-m-d'))-strtotime($arrFechaS[$f]->format('Y-m-d')))/86400;
+			$dias = abs($dias); $dias = floor($dias);	
+				
+			for($x=0;$x<=$dias;$x++)
+			{
+				$horaE = explode(":", $arrHoraE[$f]->format('H:i:s'));
+				$horaS = explode(":", $arrHoraS[$f]->format('H:i:s'));
+				if ($dias>=1)
+				{
+					if ($x==$dias) {
+						if($arrHoraS[$f]->format('H:i:s') >= '05:46')
+						{
+							$tdes+=1;
+						}
+
+						if($arrHoraS[$f]->format('H:i:s') >='13:00') {
+							$tal+=1;
+						}
+
+						if ($arrHoraS[$f]->format('H:i:s')>='18:00') {
+							$tcen+=1;
+						}
+					}
+					else
+					{
+						if ($x==0) {
+							if($arrHoraE[$f]->format('H:i:s') <= '05:46' )
+							{
+								$tdes+=1;
+							}
+
+							if($arrHoraE[$f]->format('H:i:s') <='12:00' ) {//&& $arrHoraS[$f]->format('H:i:s') >='13:00'
+								$tal+=1;
+							}
+
+							$tcen+=1;
+
+						}
+						else
+						{
+							$tdes+=1;
+								
+							$tal+=1;
+
+							$tcen+=1;							
+						}
+					}
+				}
+				else
+				{
+					if($arrHoraE[$f]->format('H:i:s') <= '05:46' ){
+						$tdes+=1;
+					}
+
+					if($arrHoraE[$f]->format('H:i:s') <='12:00' && $arrHoraS[$f]->format('H:i:s') >='13:00' ) {
+						$tal+=1;
+					}
+
+					if ($arrHoraS[$f]->format('H:i:s') >='18:00') {
+						$tcen+=1;
+					}
+				}
+			}
+
+			$tdor= $dias;
+			$conteo[] = $fecha.";".$fecha2.";".$tdes.";".$tal.";".$tcen.";".$tdor;
+			$tdes=0;$tal=0;$tcen=0;
+		}
+		return $conteo;
+	}
+
+	static function obtenerEmpleadosDisponiblesDV(){
+		$query="select a.id, a.nombre, a.cedula, b.nombre cargo from empleado a
+				inner join t_cargo b on a.cargo = b.id
+				inner join grupo_empleados g on g.id_empleado = a.id
+				WHERE g.id_secretaria={$_SESSION['id']}
+				order by a.nombre";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+
+		$rs =sqlsrv_query($_SESSION['con'],$query, $params, $options);
+
+		if ($rs) {
+			while ($fila=sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC)) {
+				echo "	<tr class='tab_bg_1'>
+						<td> 
+							<input type='checkbox' name='chkEmpleados[]' value='{$fila['id']}' <b>{$fila['nombre']}</b> - 
+							{$fila['cedula']} - {$fila['cargo']}
+						</td>
+					</tr>
+				";
+			}
+		}
+	}
+
+	static function maquetarChoferesDisponibles()
+	{
+		$choferes = array();
+
+		$choferes = ManejadorDietaViatico::obtenerChoferes();
+
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );
+
+		foreach ($choferes as $id) {
+			$query="SELECT alias.fecha_entrada, alias.fecha_salida, e.id,e.nombre,
+					case when convert(date,GETDATE(), 112) between alias.fecha_entrada and alias.fecha_salida and
+						convert(time,GETDATE(), 108) between alias.hora_entrada and alias.hora_salida
+						then 'Ocupado' else 'Disponible' end estado, dv.no_oficio
+					FROM empleado e
+					left join (select a.*,dv.fecha_entrada, fecha_salida, dv.hora_entrada, dv.hora_salida from viatico_empleado a 
+						right join destinos_viaticos dv on a.id_formulario = dv.id_viatico) alias on e.id = alias.id_empleado
+					left join dietaviatico dv on dv.id = alias.id_formulario
+					where e.id={$id} AND fecha_salida > GETDATE()";
+			$rs =sqlsrv_query($_SESSION['con'],$query, $params, $options);
+			if ($rs) {
+				if (sqlsrv_num_rows($rs)>0) {
+					while ($fila = sqlsrv_fetch_array($rs,SQLSRV_FETCH_ASSOC)) {
+						echo "	<tr class='tab_bg_2'>";
+						if (strcmp($fila['estado'], 'Ocupado')==0) {
+							echo "<td></td>";
+						}
+						else
+						{
+							echo "<td><input type='checkbox' name='chkChofer[]' value='{$fila['id']}'></td>";				
+						}
+
+						echo "
+								<td>{$fila['nombre']}</td>
+								<td>{$fila['estado']}</td>
+								<td>{$fila['no_oficio']}</td>
+								<td>{$fila['fecha_entrada']->format('Y-m-d')}</td>
+								<td>{$fila['fecha_salida']->format('Y-m-d')}</td>
+							</tr>";					
+					}
+				}
+				else
+				{
+					echo "	
+						<tr class='tab_bg_2'>
+							<td><input type='checkbox' name='chkChofer[]' value='{$id}'></td>
+						  	<td>{$_SESSION['m']->obtenerNombre($id)}</td>
+						 	<td>Disponible</td>
+						  	<td></td>
+						  	<td></td>
+						  	<td></td>
+						</tr>";					
+				}
+			}
+
+		}
+
+	}
+
+	static function requerirTransporte($id)
+	{
+		$query ="SELECT * from dietaviatico WHERE id={$id}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			if (sqlsrv_num_rows($rs) >0) {
+				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				if ($fila['transporte'] ==0) {
+					$query2 = "UPDATE dietaviatico set transporte=1 where id={$id}";
+				}
+				else
+				{
+					$query2 = "UPDATE dietaviatico set transporte=0 where id={$id}";
+				}
+				sqlsrv_query($_SESSION['con'],$query2, $params, $options);
+			}
+		}
+	}
+
+	static function esChofer($idE)
+	{
+		$query ="SELECT cargo from empleado WHERE id={$idE}";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			if (sqlsrv_num_rows($rs) >0) {
+				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				if ($fila['cargo']==41 || $fila['cargo']==42) {
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	static function obtenerDormitorioTecnico()
+	{
+		$query ="SELECT dormitorio from posicion_viatico WHERE id=123";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			if (sqlsrv_num_rows($rs) >0) {
+				$fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC);
+				return $fila['dormitorio'];
+			}
+		}
+	}
+
+	static function viajaConTecnico($idF)
+	{
+		$query ="SELECT posicion_viatico.id
+				FROM empleado, dietaviatico, viatico_empleado, posicion_viatico
+				WHERE empleado.id = viatico_empleado.id_empleado
+				AND dietaviatico.id = viatico_empleado.id_formulario
+				AND dietaviatico.id ={$idF}
+				AND empleado.id = viatico_empleado.id_empleado
+				AND empleado.tipo_viatico = posicion_viatico.id";
+		$params = array();
+		$options =  array( "Scrollable" => SQLSRV_CURSOR_KEYSET );	
+		$f=false;
+		$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
+		if ($rs) {
+			if (sqlsrv_num_rows($rs) >0) {
+				while($fila = sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC))
+				{
+					if ($fila['id'] <>110) {
+						$f= true;
+					}					
+				}
+			}
+			return $f;
+		}
+	}
 }
-
-
 ?>

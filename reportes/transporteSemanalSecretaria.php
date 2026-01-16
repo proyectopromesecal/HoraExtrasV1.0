@@ -16,7 +16,7 @@ if(isset($_GET['fi']) && isset($_GET['ff']))
 			inner join t_departamento h on a.departamento = h.id
 			inner join solicitudes_autorizadas g on f.id = g.id_solicitud and g.tipo = 'HoraExtra' and g.autorizado = 1
 			inner join horario d on a.id = d.id_empleado  and  d.fecha = f.fecha and horadesalida > case when dbo.validarNoLaboral(f.fecha) = 0 then '16:59:59' else '01:00:00' end
-			where a.id not in(1255, 146, 124, 102, 136,13, 1391) 
+			where a.nivel=0
 			AND f.usr = '{$_SESSION['usuario']}'
 			group by a.cedula, a.nombre ,h.nombre
 			order by a.nombre";
@@ -36,7 +36,7 @@ if(isset($_GET['fi']) && isset($_GET['ff']))
 			inner join t_departamento h on a.departamento = h.id
 			inner join solicitudes_autorizadas g on f.id = g.id_solicitud and g.tipo = 'HoraExtra' and g.autorizado = 1
 			inner join horario d on a.id = d.id_empleado  and  d.fecha = f.fecha and horadesalida > case when dbo.validarNoLaboral(f.fecha) = 0 then '16:59:59' else '01:00:00' end
-			where a.id not in(1255, 146, 124, 102, 136,13, 1391) 
+			where a.nivel=0
 			AND f.usr = '{$_SESSION['usuario']}'";
 	$rs = sqlsrv_query($_SESSION['con'],$query, $params, $options);
 	if($rs)
@@ -75,42 +75,42 @@ class PDF extends FPDF
 	// Pie de página
 	function Footer()
 	{
-		$this->setLeftMargin(42);
+		$this->setLeftMargin(28);
 		$this->SetY(-45);
 
 		$this->SetFont('Arial','B',8);
 		$this->Cell(25,7, "",1,0);
-		$this->Cell(60,7, "Preparado por:",1,0,'C');
-		$this->Cell(60,7, "Aprobado por:",1,0,'C');
-		$this->Cell(60,7, "Revisado por:",1,0,'C');
+		$this->Cell(70,7, "Preparado por:",1,0,'C');
+		$this->Cell(70,7, "Aprobado por:",1,0,'C');
+		$this->Cell(70,7, "Revisado por:",1,0,'C');
 		$this->Ln();
 		
 		$this->Cell(25,7, "Firma",1,0);
 		$this->SetFont('Arial','',9);
-		$this->Cell(60,7, "",1,0,'C');
-		$this->Cell(60,7, "",1,0,'C');
-		$this->Cell(60,7, "",1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',9);
 		$this->Cell(25,7, "Nombre",1,0);
-		$this->Cell(60,7, Manejador::obtenerNombreCompleto($_SESSION['id']),1,0,'C');
-		$this->Cell(60,7, Manejador::obtenerEncargado(Manejador::obtenerIdDpto($_SESSION['dpto'])),1,0,'C');
-		$this->Cell(60,7, "",1,0,'C');
+		$this->Cell(70,7, Manejador::obtenerNombreCompleto($_SESSION['id']),1,0,'C');
+		$this->Cell(70,7, Manejador::obtenerEncargado(Manejador::obtenerIdDpto($_SESSION['dpto'])),1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',8);
 		$this->Cell(25,7, "Rol",1,0);
-		$this->Cell(60,7, Manejador::obtenerCargo($_SESSION['id']),1,0,'C');
-		$this->Cell(60,7, "Encargado",1,0,'C');
-		$this->Cell(60,7, "DEPARTAMENTO DE GESTION HUMANA",1,0,'C');
+		$this->Cell(70,7, Manejador::obtenerCargo($_SESSION['id']),1,0,'C');
+		$this->Cell(70,7, "Encargado",1,0,'C');
+		$this->Cell(70,7, "DEPARTAMENTO DE GESTION HUMANA",1,0,'C');
 		$this->Ln();
 		
 		$this->SetFont('Arial','B',9);
 		$this->Cell(25,7, "Fecha",1,0);
-		$this->Cell(60,7, date('Y-m-d H:i:s'),1,0,'C');
-		$this->Cell(60,7, "",1,0,'C');
-		$this->Cell(60,7, "",1,0,'C');
+		$this->Cell(70,7, date('Y-m-d H:i:s'),1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
+		$this->Cell(70,7, "",1,0,'C');
 		$this->Ln();
 		$this->setLeftMargin(10);
 	}
